@@ -10,6 +10,7 @@ export interface TaskData {
 
 export interface BoardData {
   name: string;
+  peerId: string;
   peers: string[];
 }
 

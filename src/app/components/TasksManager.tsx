@@ -3,6 +3,7 @@
 import useBoardManager from "../lib/helpers/useBoardManager ";
 import { BoardData } from "../lib/types";
 import TasksListEditor from "./TasksListEditor";
+import { v4 as uuidv4 } from "uuid";
 
 export default function TasksManager() {
   const { boardData, offlineTasks } = useBoardManager();
@@ -14,11 +15,13 @@ export default function TasksManager() {
       ) : !boardData.data ? (
         <form
           action={(data) => {
-            const formData = {
+            const newBoardData = {
               ...Object.fromEntries(data),
+              peerId: "MT_" + uuidv4(),
               peers: [],
             } as object as BoardData;
-            boardData.update(formData);
+
+            boardData.update(newBoardData);
           }}
         >
           <label>

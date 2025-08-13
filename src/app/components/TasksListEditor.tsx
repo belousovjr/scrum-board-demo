@@ -53,7 +53,7 @@ export default function TasksListEditor({
         key={editedItemId}
         ref={form}
         action={(data) => {
-          const formData = Object.fromEntries(data.entries()) as object;
+          const formData = Object.fromEntries(data.entries());
           if (!editedItem) {
             const newItem = {
               ...formData,
