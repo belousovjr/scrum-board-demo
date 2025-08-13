@@ -2,6 +2,7 @@
 
 import useBoardManager from "../lib/helpers/useBoardManager ";
 import { BoardData } from "../lib/types";
+import OfflineToggler from "./OfflineToggler";
 import TasksListEditor from "./TasksListEditor";
 import { v4 as uuidv4 } from "uuid";
 
@@ -10,6 +11,7 @@ export default function TasksManager() {
 
   return (
     <div>
+      <OfflineToggler />
       {!boardData.data && boardData.isLoading ? (
         "Loading board..."
       ) : !boardData.data ? (
