@@ -41,8 +41,10 @@ export default function TasksListEditor({
           input.value = key;
         }
       }
+    } else if (editedItemId) {
+      cancelEditing();
     }
-  }, [editedItem]);
+  }, [cancelEditing, editedItem, editedItemId]);
 
   return (
     <div>
@@ -56,6 +58,7 @@ export default function TasksListEditor({
             const newItem = {
               ...formData,
               updatedAt: Date.now(),
+              online: false,
               id: uuidv4(),
             } as WithId<TaskData>;
             update([...(list || []), newItem]);

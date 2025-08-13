@@ -14,7 +14,10 @@ export default function TasksManager() {
       ) : !boardData.data ? (
         <form
           action={(data) => {
-            const formData = Object.fromEntries(data) as object as BoardData;
+            const formData = {
+              ...Object.fromEntries(data),
+              peers: [],
+            } as object as BoardData;
             boardData.update(formData);
           }}
         >
