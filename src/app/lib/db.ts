@@ -1,9 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from "idb";
-import { TaskData, WithId } from "./types";
-
-interface BoardData {
-  name: string;
-}
+import { BoardData, TaskData, WithId } from "./types";
 
 export interface TaskMeshDBSchemaRaw {
   boardData: {
@@ -43,4 +39,11 @@ export async function setData<T extends keyof TaskMeshDBSchemaRaw>(
 export async function getData<T extends keyof TaskMeshDBSchemaRaw>(store: T) {
   const db = await getDb();
   return db.get(store, "data");
+}
+
+export async function removeData<T extends keyof TaskMeshDBSchemaRaw>(
+  store: T
+) {
+  const db = await getDb();
+  return db.delete(store, "data");
 }

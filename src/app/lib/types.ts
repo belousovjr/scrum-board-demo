@@ -7,4 +7,8 @@ export interface TaskData {
   updatedAt: number;
 }
 
+export interface BoardData {
+  name: string;
+}
+
 export type WithId<T extends object> = T & { id: string };
