@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import PeerProvider, { PeerProviderData } from "../PeerProvider";
+import { BoardData } from "../types";
 
 interface UsePeerProviderOptions {
-  id?: string;
+  boardData?: BoardData | null;
   enabled?: boolean;
 }
 
 export default function usePeerProvider({
-  id,
+  boardData,
   enabled,
 }: UsePeerProviderOptions) {
   const provider = useRef<PeerProvider>(null);
@@ -16,18 +17,20 @@ export default function usePeerProvider({
   );
 
   useEffect(() => {
-    if (enabled && id) {
+    if (enabled && boardData) {
       if (!provider.current) {
-        provider.current = new PeerProvider(id);
+        provider.current = new PeerProvider(boardData);
         provider.current.on("updatedData", () => {
-          setProviderData(provider.current!.data);
+          setProviderData(
+            provider.current!.data ? { ...provider.current!.data } : null
+          );
         });
       }
     } else if (provider) {
       provider.current?.destroy();
       provider.current = null;
     }
-  }, [id, enabled]);
+  }, [boardData, enabled]);
 
   return providerData;
 }

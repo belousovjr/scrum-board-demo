@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import useBoardManager from "../lib/helpers/useBoardManager ";
 import { BoardData } from "../lib/types";
 import OfflineToggler from "./OfflineToggler";
 import TasksListEditor from "./TasksListEditor";
-import { v4 as uuidv4 } from "uuid";
 import { useOffline } from "../lib/helpers/useOffline";
+import { genPeerId } from "../lib/utils";
 
 export default function TasksManager() {
-  const { boardData, offlineTasks, isLoading, providerData } =
+  const { boardData, offlineTasks, isLoading, providerData, removeBoardData } =
     useBoardManager();
   const offlineMode = useOffline();
 
@@ -20,22 +20,15 @@ export default function TasksManager() {
     [boardData]
   );
 
-  const exitBoard = useCallback(() => {
-    boardData.update(null);
-    offlineTasks.update(null);
-  }, [boardData, offlineTasks]);
-
   return (
     <div>
       <OfflineToggler />
-      {isLoading ? (
-        "Loading..."
-      ) : !boardData.data ? (
+      {!boardData.data ? (
         <form
           action={(data) => {
             const newBoardData = {
               ...Object.fromEntries(data),
-              peerId: "MT_" + uuidv4(),
+              peerId: genPeerId(),
               peers: [],
             } as object as BoardData;
 
@@ -50,8 +43,41 @@ export default function TasksManager() {
       ) : (
         <div>
           <p>BOARD: {boardData.data.name}</p>
-          {!offlineMode.value && <p>{providerData!.peerId}</p>}
-          <button onClick={exitBoard}>EXIT BOARD DATA</button>
+
+          {!offlineMode.value && providerData && (
+            <div>
+              <p>{providerData!.peerData.id}</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard
+                    .writeText(
+                      window.location.origin +
+                        "/?ref_data=" +
+                        JSON.stringify({
+                          id: providerData!.peerData.id,
+                          name: providerData!.lobbyName,
+                        })
+                    )
+                    .then(() => {
+                      alert("LINK COPIED");
+                    });
+                }}
+                className="bg-green-400"
+              >
+                COPY LINK
+              </button>
+              <p>MEMBERS</p>
+              {providerData!.connections.size ? (
+                [...providerData!.connections.values()].map((item) => (
+                  <div key={item.memberData.id}>{item.memberData.id}</div>
+                ))
+              ) : (
+                <p>{"No members :("}</p>
+              )}
+            </div>
+          )}
+          <button onClick={removeBoardData}>EXIT BOARD DATA</button>
+
           <TasksListEditor
             list={offlineTasks.data}
             update={offlineTasks.update}
@@ -60,6 +86,7 @@ export default function TasksManager() {
           />
         </div>
       )}
+      {isLoading ? "Loading..." : ""}
     </div>
   );
 }
