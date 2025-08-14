@@ -1,5 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from "idb";
-import { BoardData, TaskData, WithId } from "./types";
+import { BoardData, TaskData, TasksSnapshot, WithId } from "./types";
 
 export interface TaskMeshDBSchemaRaw {
   boardData: {
@@ -10,9 +10,9 @@ export interface TaskMeshDBSchemaRaw {
     key: "data";
     value: WithId<TaskData>[];
   };
-  onlineTasks: {
+  onlineTasksSnapshot: {
     key: "data";
-    value: WithId<TaskData>[];
+    value: TasksSnapshot;
   };
 }
 
@@ -23,7 +23,7 @@ export async function getDb(): Promise<IDBPDatabase<TaskMeshDBSchema>> {
     upgrade(db) {
       db.createObjectStore("boardData");
       db.createObjectStore("offlineTasks");
-      db.createObjectStore("onlineTasks");
+      db.createObjectStore("onlineTasksSnapshot");
     },
   });
 }

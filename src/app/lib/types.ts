@@ -6,7 +6,6 @@ export interface TaskData {
   title: string;
   content: string;
   status: TaskStatus;
-  online: boolean;
   updatedAt: number;
 }
 
@@ -23,6 +22,7 @@ export type PeerProviderEvent = "updatedData";
 
 export interface BoardMemberData {
   id: string;
+  snapshotData?: TasksSnapshotData;
 }
 
 //For runtime
@@ -41,11 +41,26 @@ export type LobbyUpdatedMessage = {
   type: "LOBBY_UPDATED";
   payload: LobbyData;
 };
-export type HeartbeatMessage = { type: "HEARTBEAT" };
+export type DataSnapshotMessage = {
+  type: "DATA_SNAPSHOT";
+  payload: TasksSnapshot;
+};
+export type HeartbeatMessage = {
+  type: "HEARTBEAT";
+  payload: TasksSnapshotData;
+};
 
-export type DataMessage = LobbyUpdatedMessage | HeartbeatMessage;
+export type DataMessage =
+  | LobbyUpdatedMessage
+  | HeartbeatMessage
+  | DataSnapshotMessage;
 
-export interface RefData {
+export interface TasksSnapshotData {
   id: string;
-  name: string;
+  timestamp: number;
+  ids: string[];
+}
+
+export interface TasksSnapshot extends TasksSnapshotData {
+  tasks: WithId<TaskData>[];
 }

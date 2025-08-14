@@ -1,17 +1,26 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useDeferredValue } from "react";
 import useBoardManager from "../lib/helpers/useBoardManager ";
-import { BoardData } from "../lib/types";
+import { BoardData, TaskData, WithId } from "../lib/types";
 import OfflineToggler from "./OfflineToggler";
 import TasksListEditor from "./TasksListEditor";
 import { useOffline } from "../lib/helpers/useOffline";
 import { genPeerId } from "../lib/utils";
 
 export default function TasksManager() {
-  const { boardData, offlineTasks, isLoading, providerData, removeBoardData } =
-    useBoardManager();
+  const {
+    boardData,
+    offlineTasks,
+    onlineTasksSnapshot,
+    isLoading,
+    providerData,
+    removeBoardData,
+    requestUpdate,
+  } = useBoardManager();
   const offlineMode = useOffline();
+
+  const defOffline = useDeferredValue(offlineMode.value);
 
   const createBoard = useCallback(
     async (newBoardData: BoardData) => {
@@ -20,43 +29,55 @@ export default function TasksManager() {
     [boardData]
   );
 
+  const updateOnlineHandler = useCallback(
+    async (tasks: WithId<TaskData>[], id: string) => {
+      if (requestUpdate) {
+        try {
+          await requestUpdate(tasks, [id]);
+        } catch {
+          alert("ERROR! COLLISION ");
+        }
+      }
+    },
+    [requestUpdate]
+  );
+
   return (
     <div>
       <OfflineToggler />
       {!boardData.data ? (
-        <form
-          action={(data) => {
-            const newBoardData = {
-              ...Object.fromEntries(data),
-              peerId: genPeerId(),
-              peers: [],
-            } as object as BoardData;
+        !isLoading && (
+          <form
+            action={(data) => {
+              const newBoardData = {
+                ...Object.fromEntries(data),
+                peerId: genPeerId(),
+                peers: [],
+              } as object as BoardData;
 
-            createBoard(newBoardData);
-          }}
-        >
-          <label>
-            Name <input name="name" required />
-          </label>
-          <button disabled={boardData.isLoading}>Create Board</button>
-        </form>
+              createBoard(newBoardData);
+            }}
+          >
+            <label>
+              Name <input name="name" required />
+            </label>
+            <button disabled={boardData.isLoading}>Create Board</button>
+          </form>
+        )
       ) : (
         <div>
           <p>BOARD: {boardData.data.name}</p>
 
-          {!offlineMode.value && providerData && (
+          {!defOffline && providerData && (
             <div>
-              <p>{providerData!.peerData.id}</p>
+              <p>{providerData!.peerId}</p>
               <button
                 onClick={() => {
                   navigator.clipboard
                     .writeText(
                       window.location.origin +
-                        "/?ref_data=" +
-                        JSON.stringify({
-                          id: providerData!.peerData.id,
-                          name: providerData!.lobbyName,
-                        })
+                        "/?ref_id=" +
+                        providerData!.peerId
                     )
                     .then(() => {
                       alert("LINK COPIED");
@@ -78,6 +99,13 @@ export default function TasksManager() {
           )}
           <button onClick={removeBoardData}>EXIT BOARD DATA</button>
 
+          <TasksListEditor
+            list={onlineTasksSnapshot.data?.tasks || null}
+            update={updateOnlineHandler}
+            isLoading={onlineTasksSnapshot.isLoading}
+            disabled={defOffline}
+            title="ONLINE TASKS"
+          />
           <TasksListEditor
             list={offlineTasks.data}
             update={offlineTasks.update}

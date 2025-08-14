@@ -5,8 +5,8 @@ export function useDB<
   T extends keyof TaskMeshDBSchemaRaw,
   D extends TaskMeshDBSchemaRaw[T]["value"]
 >(
-  name: T,
-  initialValue: TaskMeshDBSchemaRaw[T]["value"] | null = null
+  name: T
+  // initialValue: TaskMeshDBSchemaRaw[T]["value"] | null = null
 ): {
   data: TaskMeshDBSchemaRaw[T]["value"] | null;
   update: (newData: D | null) => Promise<void>;
@@ -48,5 +48,5 @@ export function useDB<
     };
   }, [name]);
 
-  return { data: data ?? initialValue, update, isLoading };
+  return { data, update, isLoading };
 }
