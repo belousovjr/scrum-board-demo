@@ -8,9 +8,10 @@ const statuses: TaskStatus[] = ["TODO", "PROCESS", "COMPLETED"];
 
 interface TasksListEditorProps {
   list: WithId<TaskData>[] | null;
-  update: (items: WithId<TaskData>[]) => Promise<void>;
+  update: (items: WithId<TaskData>[], editedId: string) => Promise<void>;
   isLoading: boolean;
   title: string;
+  disabled?: boolean;
 }
 
 export default function TasksListEditor({
@@ -18,6 +19,7 @@ export default function TasksListEditor({
   update,
   isLoading,
   title,
+  disabled,
 }: TasksListEditorProps) {
   const form = useRef<HTMLFormElement>(null);
   const [editedItemId, setEditedItemId] = useState<string | null>(null);
@@ -49,54 +51,57 @@ export default function TasksListEditor({
   return (
     <div>
       <p>{title}</p>
-      <form
-        key={editedItemId}
-        ref={form}
-        action={(data) => {
-          const formData = Object.fromEntries(data.entries());
-          if (!editedItem) {
-            const newItem = {
-              ...formData,
-              updatedAt: Date.now(),
-              online: false,
-              id: uuidv4(),
-            } as WithId<TaskData>;
-            update([...(list || []), newItem]);
-          } else {
-            update(
-              (list || []).map((item) =>
-                item.id !== editedItemId
-                  ? item
-                  : { ...editedItem, ...formData, updatedAt: Date.now() }
-              )
-            );
-          }
-        }}
-      >
-        <label>
-          Tite: <input name="title" required />
-        </label>
-        <label>
-          Content: <input name="content" />
-        </label>
-        <select
-          name="status"
-          defaultValue={statuses[0]}
-          title="select task status"
+      {!disabled && (
+        <form
+          key={editedItemId}
+          ref={form}
+          action={(data) => {
+            const formData = Object.fromEntries(data.entries());
+            if (!editedItem) {
+              const newItem = {
+                ...formData,
+                updatedAt: Date.now(),
+                id: uuidv4(),
+              } as WithId<TaskData>;
+              update([...(list || []), newItem], newItem.id);
+            } else {
+              update(
+                (list || []).map((item) =>
+                  item.id !== editedItemId
+                    ? item
+                    : { ...editedItem, ...formData, updatedAt: Date.now() }
+                ),
+                editedItemId!
+              );
+              cancelEditing();
+            }
+          }}
         >
-          {statuses.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-        {editedItem && (
-          <button onClick={cancelEditing} type="button">
-            CANCEL
-          </button>
-        )}
-        <button disabled={isLoading}>{!editedItem ? "Add" : "Update"}</button>
-      </form>
+          <label>
+            Tite: <input name="title" required />
+          </label>
+          <label>
+            Content: <input name="content" />
+          </label>
+          <select
+            name="status"
+            defaultValue={statuses[0]}
+            title="select task status"
+          >
+            {statuses.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+          {editedItem && (
+            <button onClick={cancelEditing} type="button">
+              CANCEL
+            </button>
+          )}
+          <button disabled={isLoading}>{!editedItem ? "Add" : "Update"}</button>
+        </form>
+      )}
       {list?.length
         ? list.map((item) => (
             <div key={item.id}>
@@ -105,20 +110,28 @@ export default function TasksListEditor({
               <span>{item.content}</span>
               {" | "}
               <span>{item.status}</span>
-              <button
-                onClick={() => {
-                  update(list.filter((el) => el.id !== item.id));
-                }}
-              >
-                REMOVE
-              </button>
-              <button
-                onClick={() => {
-                  setEditedItemId(item.id);
-                }}
-              >
-                UPDATE
-              </button>
+              {!disabled && (
+                <>
+                  {" "}
+                  <button
+                    onClick={() => {
+                      update(
+                        list.filter((el) => el.id !== item.id),
+                        item.id
+                      );
+                    }}
+                  >
+                    REMOVE
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditedItemId(item.id);
+                    }}
+                  >
+                    UPDATE
+                  </button>
+                </>
+              )}
             </div>
           ))
         : !isLoading && <p>{"is empty :("}</p>}

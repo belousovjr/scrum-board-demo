@@ -3,69 +3,83 @@ import { useDB } from "./useDB";
 import { useOffline } from "./useOffline";
 import usePeerProvider from "./usePeerProvider";
 import { usePathname, useRouter } from "next/navigation";
-import { genPeerId } from "../utils";
-import { RefData } from "../types";
+import { genPeerId, initialTasksSnapshot } from "../utils";
 
 export default function useBoardManager() {
   const boardData = useDB("boardData");
-  const offlineTasks = useDB("offlineTasks", []);
+  const offlineTasks = useDB("offlineTasks");
+  const onlineTasksSnapshot = useDB("onlineTasksSnapshot");
   const offlineMode = useOffline();
   const router = useRouter();
   const pathName = usePathname();
-
-  const [refData, setRefData] = useState<RefData>();
+  const [refId, setRefData] = useState<string>();
 
   const isProviderNeeded = useMemo(() => {
     return !!(boardData.data && !offlineMode.value);
   }, [boardData.data, offlineMode.value]);
 
-  const providerData = usePeerProvider({
+  const { providerData, requestUpdate, isConsensus } = usePeerProvider({
     boardData: boardData.data,
     enabled: isProviderNeeded,
+    tasksSnapshot:
+      !onlineTasksSnapshot.data && onlineTasksSnapshot.isLoading
+        ? null
+        : onlineTasksSnapshot.data || { ...initialTasksSnapshot },
   });
 
   const isLoading = useMemo(
     () =>
       !!(
         boardData.isLoading ||
+        onlineTasksSnapshot.isLoading ||
         (isProviderNeeded && !providerData) ||
-        (refData && !providerData)
+        (refId && !providerData)
       ),
-    [boardData.isLoading, isProviderNeeded, providerData, refData]
+    [
+      boardData.isLoading,
+      isProviderNeeded,
+      providerData,
+      refId,
+      onlineTasksSnapshot,
+    ]
   );
 
   const removeBoardData = useCallback(() => {
     setRefData(undefined);
-    return Promise.all([boardData.update(null), offlineTasks.update(null)]);
-  }, [boardData, offlineTasks]);
+    return Promise.all([
+      boardData.update(null),
+      offlineTasks.update(null),
+      onlineTasksSnapshot.update(null),
+    ]);
+  }, [boardData, offlineTasks, onlineTasksSnapshot]);
 
   const createBoardByRef = useCallback(
-    async ({ name, id }: RefData) => {
-      offlineTasks.update(null);
-      await boardData.update({ name, peerId: genPeerId(), peers: [id] });
+    async (id: string) => {
+      await removeBoardData();
+      boardData.update({ name: "", peerId: genPeerId(), peers: [id] });
     },
-    [offlineTasks, boardData]
+    [removeBoardData, boardData]
   );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const refDataString = params.get("ref_data");
+    const refIdParam = params.get("ref_id");
 
-    if (refDataString) {
-      setRefData(JSON.parse(refDataString) as RefData);
+    if (refIdParam) {
+      setRefData(refIdParam);
       router.replace(pathName, { scroll: false });
     }
   }, [pathName, router]);
 
   useEffect(() => {
     if (
-      refData &&
+      refId &&
       !providerData &&
       !boardData.isLoading &&
-      !boardData.data?.peers.includes(refData.id) &&
-      boardData.data?.peerId !== refData.id
+      !boardData.data?.peers.includes(refId) &&
+      boardData.data?.peerId !== refId
     ) {
-      createBoardByRef(refData);
+      createBoardByRef(refId);
     }
   }, [
     boardData.data?.peerId,
@@ -73,7 +87,7 @@ export default function useBoardManager() {
     boardData.isLoading,
     createBoardByRef,
     providerData,
-    refData,
+    refId,
   ]);
 
   useEffect(() => {
@@ -82,20 +96,39 @@ export default function useBoardManager() {
         .map(([id]) => id)
         .toSorted();
       const boardPeersIds = boardData.data.peers.toSorted();
-      if (JSON.stringify(providerPeersIds) !== JSON.stringify(boardPeersIds)) {
+
+      if (
+        JSON.stringify(providerPeersIds) !== JSON.stringify(boardPeersIds) ||
+        (providerData.lobbyName &&
+          providerData.lobbyName !== boardData.data.name)
+      ) {
         boardData.update({
           ...boardData.data,
+          name: providerData.lobbyName || boardData.data.name,
           peers: providerPeersIds,
         });
       }
     }
-  }, [providerData, boardData]);
+  }, [providerData, boardData, onlineTasksSnapshot, isConsensus]);
+
+  useEffect(() => {
+    if (
+      providerData &&
+      !onlineTasksSnapshot.isLoading &&
+      providerData.tasksSnapshot.id !== onlineTasksSnapshot.data?.id &&
+      isConsensus
+    ) {
+      onlineTasksSnapshot.update(providerData.tasksSnapshot);
+    }
+  }, [isConsensus, onlineTasksSnapshot, providerData]);
 
   return {
     boardData,
     offlineTasks,
+    onlineTasksSnapshot,
     providerData,
     removeBoardData,
+    requestUpdate,
     isLoading,
   };
 }
