@@ -25,6 +25,7 @@ export default function TasksManager() {
     offlineTasks.update(null);
   }, [boardData, offlineTasks]);
 
+  console.log(providerData);
   return (
     <div>
       <OfflineToggler />
@@ -50,7 +51,7 @@ export default function TasksManager() {
       ) : (
         <div>
           <p>BOARD: {boardData.data.name}</p>
-          {!offlineMode.value && <p>{providerData!.peerId}</p>}
+          {!offlineMode.value && <p>{providerData!.peerData.id}</p>}
           <button onClick={exitBoard}>EXIT BOARD DATA</button>
           <TasksListEditor
             list={offlineTasks.data}

@@ -14,6 +14,7 @@ export default function useBoardManager() {
 
   const providerData = usePeerProvider({
     id: boardData.data?.peerId,
+    lobbyName: boardData.data?.name,
     enabled: isProviderNeeded,
   });
 
