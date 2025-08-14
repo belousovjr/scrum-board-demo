@@ -1,19 +1,35 @@
 "use client";
 
+import { useCallback } from "react";
 import useBoardManager from "../lib/helpers/useBoardManager ";
 import { BoardData } from "../lib/types";
 import OfflineToggler from "./OfflineToggler";
 import TasksListEditor from "./TasksListEditor";
 import { v4 as uuidv4 } from "uuid";
+import { useOffline } from "../lib/helpers/useOffline";
 
 export default function TasksManager() {
-  const { boardData, offlineTasks } = useBoardManager();
+  const { boardData, offlineTasks, isLoading, providerData } =
+    useBoardManager();
+  const offlineMode = useOffline();
+
+  const createBoard = useCallback(
+    async (newBoardData: BoardData) => {
+      await boardData.update(newBoardData);
+    },
+    [boardData]
+  );
+
+  const exitBoard = useCallback(() => {
+    boardData.update(null);
+    offlineTasks.update(null);
+  }, [boardData, offlineTasks]);
 
   return (
     <div>
       <OfflineToggler />
-      {!boardData.data && boardData.isLoading ? (
-        "Loading board..."
+      {isLoading ? (
+        "Loading..."
       ) : !boardData.data ? (
         <form
           action={(data) => {
@@ -23,7 +39,7 @@ export default function TasksManager() {
               peers: [],
             } as object as BoardData;
 
-            boardData.update(newBoardData);
+            createBoard(newBoardData);
           }}
         >
           <label>
@@ -34,14 +50,8 @@ export default function TasksManager() {
       ) : (
         <div>
           <p>BOARD: {boardData.data.name}</p>
-          <button
-            onClick={() => {
-              boardData.update(null);
-              offlineTasks.update(null);
-            }}
-          >
-            EXIT BOARD DATA
-          </button>
+          {!offlineMode.value && <p>{providerData!.peerId}</p>}
+          <button onClick={exitBoard}>EXIT BOARD DATA</button>
           <TasksListEditor
             list={offlineTasks.data}
             update={offlineTasks.update}

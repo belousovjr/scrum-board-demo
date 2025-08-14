@@ -1,3 +1,4 @@
+"use client";
 import TasksManager from "./components/TasksManager";
 
 export default function Home() {

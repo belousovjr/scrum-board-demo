@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { OfflineContext } from "@/app/components/OfflineProvider";
+import { useContext, useEffect, useState } from "react";
 
 export function useOffline() {
-  const [isOffline, setIsOffline] = useState(
-    typeof window !== "undefined" ? !window.navigator.onLine : false
-  );
-  const [customOffline, setCustomOffline] = useState(isOffline);
+  const customOffline = useContext(OfflineContext);
+  const [isOffline, setIsOffline] = useState(!!customOffline?.value);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -20,8 +19,10 @@ export function useOffline() {
   }, []);
 
   return {
-    value: isOffline || customOffline,
-    setValue: setCustomOffline,
+    value: isOffline || customOffline?.value,
+    setValue: (value: boolean) => {
+      customOffline?.setValue(value);
+    },
     nativeOffline: isOffline,
   };
 }
