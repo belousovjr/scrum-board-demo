@@ -10,6 +10,7 @@ export interface TaskData {
   updatedAt: number;
 }
 
+// For IndexDB
 export interface BoardData {
   name: string;
   peerId: string;
@@ -24,6 +25,7 @@ export interface BoardMemberData {
   id: string;
 }
 
+//For runtime
 export interface LobbyData {
   name: string;
   membersData: BoardMemberData[];
@@ -42,3 +44,8 @@ export type LobbyUpdatedMessage = {
 export type HeartbeatMessage = { type: "HEARTBEAT" };
 
 export type DataMessage = LobbyUpdatedMessage | HeartbeatMessage;
+
+export interface RefData {
+  id: string;
+  name: string;
+}
