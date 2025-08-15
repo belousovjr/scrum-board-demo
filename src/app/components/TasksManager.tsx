@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useDeferredValue } from "react";
+import { useCallback, useDeferredValue, useMemo } from "react";
 import useBoardManager from "../lib/helpers/useBoardManager ";
 import { BoardData, TaskData, WithId } from "../lib/types";
 import OfflineToggler from "./OfflineToggler";
 import TasksListEditor from "./TasksListEditor";
 import { useOffline } from "../lib/helpers/useOffline";
 import { genPeerId } from "../lib/utils";
+import { useShortenLink } from "../lib/helpers/useShortenLink";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function TasksManager() {
   const {
@@ -43,6 +45,15 @@ export default function TasksManager() {
     [requestUpdate]
   );
 
+  const link = useMemo(
+    () =>
+      providerData &&
+      window.location.origin + "/?ref_id=" + providerData.peerId,
+    [providerData]
+  );
+
+  const shortLinkData = useShortenLink(link);
+
   return (
     <div>
       <OfflineToggler />
@@ -72,22 +83,37 @@ export default function TasksManager() {
           {!defOffline && providerData && (
             <div>
               <p>{providerData!.peerId}</p>
-              <button
-                onClick={() => {
-                  navigator.clipboard
-                    .writeText(
-                      window.location.origin +
-                        "/?ref_id=" +
-                        providerData!.peerId
-                    )
-                    .then(() => {
-                      alert("LINK COPIED");
-                    });
-                }}
-                className="bg-green-400"
-              >
-                COPY LINK
-              </button>
+              {link && (
+                <>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(link).then(() => {
+                        alert("LINK COPIED");
+                      });
+                    }}
+                    className="bg-green-400"
+                  >
+                    COPY LINK
+                  </button>
+                  {shortLinkData.value ? (
+                    <QRCodeSVG
+                      size={500}
+                      value={shortLinkData.value}
+                      className="border-white border-2"
+                    />
+                  ) : !shortLinkData.isLoading ? (
+                    <button
+                      onClick={() => {
+                        shortLinkData.activate();
+                      }}
+                    >
+                      GENERATE QR
+                    </button>
+                  ) : (
+                    "GENERATE..."
+                  )}
+                </>
+              )}
               <p>MEMBERS</p>
               {providerData!.connections.size ? (
                 [...providerData!.connections.values()].map((item) => (
