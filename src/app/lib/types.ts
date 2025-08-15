@@ -11,14 +11,14 @@ export interface TaskData {
 
 // For IndexDB
 export interface BoardData {
-  name: string;
+  name: string | null;
   peerId: string;
   peers: string[];
 }
 
 export type WithId<T extends object> = T & { id: string };
 
-export type PeerProviderEvent = "updatedData";
+export type PeerProviderEvent = "updatedData" | "failedConnection";
 
 export interface BoardMemberData {
   id: string;
@@ -27,7 +27,7 @@ export interface BoardMemberData {
 
 //For runtime
 export interface LobbyData {
-  name: string;
+  name: string | null;
   membersData: BoardMemberData[];
 }
 

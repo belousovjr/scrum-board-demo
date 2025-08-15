@@ -6,12 +6,14 @@ interface UsePeerProviderOptions {
   boardData: BoardData | null;
   tasksSnapshot: TasksSnapshot | null;
   enabled: boolean;
+  onFailedConnection?: () => void;
 }
 
 export default function usePeerProvider({
   boardData,
   tasksSnapshot,
   enabled,
+  onFailedConnection,
 }: UsePeerProviderOptions) {
   const provider = useRef<PeerProvider>(null);
   const [providerData, setProviderData] = useState<PeerProviderData | null>(
@@ -28,6 +30,10 @@ export default function usePeerProvider({
             provider.current!.data ? { ...provider.current!.data } : null
           );
           setIsConsensus(provider!.current?.isDataConsensus);
+        });
+        provider.current.on("failedConnection", () => {
+          alert("failed ref connection");
+          onFailedConnection?.();
         });
       }
     } else if (provider) {

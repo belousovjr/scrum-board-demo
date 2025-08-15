@@ -138,6 +138,7 @@ export default function TasksManager() {
             update={offlineTasks.update}
             isLoading={offlineTasks.isLoading}
             title="OFFLINE TASKS"
+            disabled={!defOffline}
           />
           {!!offlineTasks.data?.length && !offlineMode.value && (
             <button onClick={syncOfflineTasks} disabled={isLoading}>
