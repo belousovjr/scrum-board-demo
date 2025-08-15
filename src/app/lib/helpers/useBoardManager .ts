@@ -102,16 +102,13 @@ export default function useBoardManager() {
       !boardData.data?.peers.includes(refId) &&
       boardData.data?.peerId !== refId
     ) {
-      createBoardByRef(refId);
+      if (!boardData.data || confirm("Do you want to sync by ref?")) {
+        createBoardByRef(refId);
+      } else {
+        setRefData(undefined);
+      }
     }
-  }, [
-    boardData.data?.peerId,
-    boardData.data?.peers,
-    boardData.isLoading,
-    createBoardByRef,
-    providerData,
-    refId,
-  ]);
+  }, [boardData, createBoardByRef, providerData, refId]);
 
   useEffect(() => {
     if (providerData && !boardData.isLoading && boardData.data) {
