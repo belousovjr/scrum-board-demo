@@ -17,6 +17,7 @@ export default function TasksManager() {
     providerData,
     removeBoardData,
     requestUpdate,
+    syncOfflineTasks,
   } = useBoardManager();
   const offlineMode = useOffline();
 
@@ -112,9 +113,14 @@ export default function TasksManager() {
             isLoading={offlineTasks.isLoading}
             title="OFFLINE TASKS"
           />
+          {!!offlineTasks.data?.length && !offlineMode.value && (
+            <button onClick={syncOfflineTasks} disabled={isLoading}>
+              SYNC OFFLINE
+            </button>
+          )}
         </div>
       )}
-      {isLoading ? "Loading..." : ""}
+      <p>{isLoading ? "Loading..." : <span>&nbsp;</span>}</p>
     </div>
   );
 }

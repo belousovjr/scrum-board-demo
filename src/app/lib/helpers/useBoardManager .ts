@@ -61,6 +61,29 @@ export default function useBoardManager() {
     [removeBoardData, boardData]
   );
 
+  const syncOfflineTasks = useCallback(async () => {
+    if (
+      !offlineMode.value &&
+      !onlineTasksSnapshot.isLoading &&
+      !offlineTasks.isLoading &&
+      onlineTasksSnapshot.data &&
+      offlineTasks.data &&
+      requestUpdate
+    ) {
+      await requestUpdate(
+        [...onlineTasksSnapshot.data.tasks, ...offlineTasks.data],
+        offlineTasks.data.map((item) => item.id)
+      );
+      await offlineTasks.update([]);
+    }
+  }, [
+    offlineMode.value,
+    offlineTasks,
+    onlineTasksSnapshot.data,
+    onlineTasksSnapshot.isLoading,
+    requestUpdate,
+  ]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refIdParam = params.get("ref_id");
@@ -129,6 +152,7 @@ export default function useBoardManager() {
     providerData,
     removeBoardData,
     requestUpdate,
+    syncOfflineTasks,
     isLoading,
   };
 }
