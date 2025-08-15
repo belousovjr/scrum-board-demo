@@ -135,7 +135,7 @@ export default function TasksListEditor({
             </div>
           ))
         : !isLoading && <p>{"is empty :("}</p>}
-      {isLoading && "Loading list..."}
+      <p>{isLoading ? "Loading list..." : <span>&nbsp;</span>}</p>
     </div>
   );
 }
