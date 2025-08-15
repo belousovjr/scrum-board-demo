@@ -22,7 +22,7 @@ export interface PeerProviderData {
   tasksSnapshot: TasksSnapshot;
   peerId: string;
   connections: Map<string, ConnectionDataWrapped>;
-  lobbyName: string;
+  lobbyName: string | null; //null - when connect by ref
 }
 export type PeerProviderDataUpdate = {
   [K in keyof PeerProviderData]?: PeerProviderData[K];
@@ -302,6 +302,9 @@ export default class PeerProvider {
           ),
         },
       });
+    } else if (!this.data?.connections.size && this.data?.lobbyName === null) {
+      //failed ref connection
+      this.emit("failedConnection");
     }
   }
   broadcastMessage(

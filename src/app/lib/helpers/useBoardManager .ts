@@ -14,17 +14,32 @@ export default function useBoardManager() {
   const pathName = usePathname();
   const [refId, setRefData] = useState<string>();
 
+  const prepTasksSnapshot = useMemo(
+    () =>
+      !onlineTasksSnapshot.data && onlineTasksSnapshot.isLoading
+        ? null
+        : onlineTasksSnapshot.data || { ...initialTasksSnapshot },
+    [onlineTasksSnapshot.data, onlineTasksSnapshot.isLoading]
+  );
+
   const isProviderNeeded = useMemo(() => {
     return !!(boardData.data && !offlineMode.value);
   }, [boardData.data, offlineMode.value]);
 
+  const removeBoardData = useCallback(() => {
+    setRefData(undefined);
+    return Promise.all([
+      boardData.update(null),
+      offlineTasks.update(null),
+      onlineTasksSnapshot.update(null),
+    ]);
+  }, [boardData, offlineTasks, onlineTasksSnapshot]);
+
   const { providerData, requestUpdate, isConsensus } = usePeerProvider({
     boardData: boardData.data,
     enabled: isProviderNeeded,
-    tasksSnapshot:
-      !onlineTasksSnapshot.data && onlineTasksSnapshot.isLoading
-        ? null
-        : onlineTasksSnapshot.data || { ...initialTasksSnapshot },
+    tasksSnapshot: prepTasksSnapshot,
+    onFailedConnection: removeBoardData,
   });
 
   const isLoading = useMemo(
@@ -44,19 +59,10 @@ export default function useBoardManager() {
     ]
   );
 
-  const removeBoardData = useCallback(() => {
-    setRefData(undefined);
-    return Promise.all([
-      boardData.update(null),
-      offlineTasks.update(null),
-      onlineTasksSnapshot.update(null),
-    ]);
-  }, [boardData, offlineTasks, onlineTasksSnapshot]);
-
   const createBoardByRef = useCallback(
     async (id: string) => {
       await removeBoardData();
-      boardData.update({ name: "", peerId: genPeerId(), peers: [id] });
+      boardData.update({ name: null, peerId: genPeerId(), peers: [id] });
     },
     [removeBoardData, boardData]
   );
@@ -96,6 +102,7 @@ export default function useBoardManager() {
 
   useEffect(() => {
     if (
+      !offlineMode.value &&
       refId &&
       !providerData &&
       !boardData.isLoading &&
@@ -108,7 +115,7 @@ export default function useBoardManager() {
         setRefData(undefined);
       }
     }
-  }, [boardData, createBoardByRef, providerData, refId]);
+  }, [boardData, createBoardByRef, offlineMode.value, providerData, refId]);
 
   useEffect(() => {
     if (providerData && !boardData.isLoading && boardData.data) {
