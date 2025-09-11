@@ -31,7 +31,7 @@ export default function TasksListSection({
   const isMobile = type === "MOBILE";
 
   return (
-    <div ref={setNodeRef} className="flex flex-col gap-y-4 transitio">
+    <div ref={setNodeRef} className="flex flex-col gap-y-4">
       {!isMobile && (
         <div className="relative text-lg font-medium border-b-1 border-general-80 py-4 transition-colors">
           {type}
