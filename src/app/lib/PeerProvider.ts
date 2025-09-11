@@ -15,6 +15,7 @@ import {
   filterOpenableConnections,
   getSnapshotData,
   isDataMessage,
+  snackbar,
 } from "./utils";
 import { checkHeartbeatMs, lifeTimeMs, reInitHeartbeatMs } from "./constants";
 
@@ -63,6 +64,7 @@ export default class PeerProvider {
 
       this.peer.on("error", (e) => {
         const { type, message } = e as { type: string; message: string };
+        snackbar({ text: message, variant: "error" });
         if (type === "unavailable-id" && message.includes("is taken")) {
           this.emit("failedTab");
         }
