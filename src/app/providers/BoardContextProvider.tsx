@@ -158,7 +158,8 @@ export default function BoardContextProvider({
     if (
       providerData &&
       boardData.data?.peerId === providerData.peerId &&
-      !boardData.isLoading
+      !boardData.isLoading &&
+      !offlineMode.value
     ) {
       const providerPeersIds = Array.from(providerData?.connections)
         .map(([id]) => id)
@@ -181,16 +182,16 @@ export default function BoardContextProvider({
         });
       }
     }
-  }, [boardData, providerData]);
+  }, [boardData, offlineMode.value, providerData]);
 
   useEffect(() => {
     if (
       providerData &&
       boardData.data?.peerId === providerData.peerId &&
-      !offlineMode.value &&
       !onlineTasksSnapshot.isLoading &&
       providerData.tasksSnapshot.id !== onlineTasksSnapshot.data?.id &&
-      isConsensus
+      isConsensus &&
+      !offlineMode.value
     ) {
       onlineTasksSnapshot.update(providerData.tasksSnapshot);
     }

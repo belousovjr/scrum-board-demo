@@ -61,8 +61,12 @@ export function checkIsDesktop() {
   return typeof window !== "undefined" ? window.innerWidth >= 1024 : true;
 }
 
-export function checkIsOffline() {
+export function checkIsNativeOffline() {
   return typeof window !== "undefined" ? !window.navigator.onLine : false;
+}
+
+export function checkIsOffline() {
+  return store.getState().app.offline;
 }
 
 export function snackbar(data: Omit<SnackbarData, "id">) {
