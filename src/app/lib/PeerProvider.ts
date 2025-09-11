@@ -113,16 +113,18 @@ export default class PeerProvider {
   }
   removeConnections(ids: string[]) {
     if (!ids.length || !this.data) return;
-    const { connections } = this.data;
+    const { connections, memberNames } = this.data;
     let updated = false;
     for (const id of ids) {
       if (connections.delete(id)) {
         updated = true;
       }
+      memberNames.delete(id);
     }
     if (updated)
       this.setData({
         connections: new Map(connections),
+        memberNames: new Map(memberNames),
       });
   }
   async addConnections(connections: DataConnection[]) {
