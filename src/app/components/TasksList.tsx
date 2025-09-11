@@ -55,7 +55,11 @@ export default function TasksList() {
     const list = [...(offlineTasks ?? []), ...(onlineTasks ?? [])];
     if (updatedTask) {
       const index = list.findIndex((item) => item.id === updatedTask.id);
-      if (index !== -1 && list[index].status !== updatedTask.status) {
+      if (
+        index !== -1 &&
+        updatedTask.updatedAt > list[index].updatedAt &&
+        list[index].status !== updatedTask.status
+      ) {
         list.splice(index, 1, updatedTask);
       }
     }
