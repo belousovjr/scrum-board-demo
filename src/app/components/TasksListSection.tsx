@@ -10,18 +10,18 @@ export default function TasksListSection({
   type,
   isOffline,
   providerIsReady,
-  setDeletedTask,
-  setSelectedStatus,
-  setShowTask,
+  onDelete,
+  setStatus,
+  onShow,
   setEditTask,
 }: {
   tasks: WithId<TaskData>[];
   type: TaskType;
   isOffline?: boolean;
   providerIsReady: boolean;
-  setDeletedTask: (task: WithId<TaskData>) => unknown;
-  setSelectedStatus: (task: TaskStatus) => unknown;
-  setShowTask: (task: WithId<TaskData>) => unknown;
+  onDelete: (task: WithId<TaskData>) => unknown;
+  setStatus: (task: TaskStatus) => unknown;
+  onShow: (task: WithId<TaskData>) => unknown;
   setEditTask: (task: WithId<TaskData>) => unknown;
 }) {
   const { isOver, setNodeRef } = useDroppable({
@@ -47,7 +47,7 @@ export default function TasksListSection({
         icon={<PlusIcon />}
         size="sm"
         onClick={() => {
-          setSelectedStatus(!isMobile ? type : "TODO");
+          setStatus(!isMobile ? type : "TODO");
         }}
         disabled={isOffline !== !providerIsReady}
       >
@@ -59,14 +59,14 @@ export default function TasksListSection({
             key={item.id}
             task={item}
             onDelete={() => {
-              setDeletedTask(item);
+              onDelete(item);
             }}
             onEdit={() => {
-              setSelectedStatus(item.status);
+              setStatus(item.status);
               setEditTask(item);
             }}
             onShow={() => {
-              setShowTask(item);
+              onShow(item);
             }}
             disabled={!providerIsReady && !item.isOffline}
             hideActions={isOffline === !item.isOffline}

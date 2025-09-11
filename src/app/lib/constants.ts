@@ -19,12 +19,12 @@ export const lifeTimeMs = 5000;
 export const reInitHeartbeatMs = 2000;
 export const checkHeartbeatMs = 500;
 
-export const statuses: TaskStatus[] = ["TODO", "PROCESS", "COMPLETED"];
+export const statuses: TaskStatus[] = ["TODO", "PROGRESS", "DONE"];
 
 export const statusClasses: Record<TaskStatus | "OFFLINE", string> = {
   TODO: "bg-red-40 text-red-100",
-  PROCESS: "bg-yellow-40 text-yellow-100",
-  COMPLETED: "bg-green-40 text-green-100",
+  PROGRESS: "bg-yellow-40 text-yellow-100",
+  DONE: "bg-green-40 text-green-100",
   OFFLINE: "bg-general-40 text-general-100",
 };
 
