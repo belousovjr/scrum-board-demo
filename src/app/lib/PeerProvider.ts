@@ -2,37 +2,21 @@ import { DataConnection, Peer } from "peerjs";
 import { v4 as uuidv4 } from "uuid";
 import {
   BoardData,
-  ConnectionDataWrapped,
   DataMessage,
+  PeerProviderData,
+  PeerProviderDataUpdate,
   PeerProviderEvent,
+  RequestedUpdate,
   TaskData,
   TasksSnapshot,
   WithId,
 } from "./types";
 import {
-  checkHeartbeatMs,
   filterOpenableConnections,
   getSnapshotData,
   isDataMessage,
-  lifeTimeMs,
-  reInitHeartbeatMs,
 } from "./utils";
-
-export interface PeerProviderData {
-  tasksSnapshot: TasksSnapshot;
-  peerId: string;
-  connections: Map<string, ConnectionDataWrapped>;
-  lobbyName: string;
-}
-export type PeerProviderDataUpdate = {
-  [K in keyof PeerProviderData]?: PeerProviderData[K];
-};
-
-interface RequestedUpdate {
-  snapshot: TasksSnapshot;
-  resolve: (value: true) => void;
-  reject: (value: false) => void;
-}
+import { checkHeartbeatMs, lifeTimeMs, reInitHeartbeatMs } from "./constants";
 
 export default class PeerProvider {
   peer: Peer;
@@ -48,27 +32,24 @@ export default class PeerProvider {
     this.peer.on("open", () => {
       this.setData({
         peerId: boardData.peerId,
+        peerName: boardData.peerName,
         tasksSnapshot,
-        connections: new Map(),
         lobbyName: boardData.name,
+        connections: new Map(),
+        memberNames: new Map(boardData.memberNames),
       });
 
       if (boardData.peers.length) {
-        const defaultConnections = boardData.peers.map((peer) =>
-          this.peer.connect(peer)
+        this.addConnections(
+          boardData.peers.map((peer) => this.peer.connect(peer))
         );
-        this.addConnections(defaultConnections);
       }
 
       this.heartbeatInterval = setInterval(() => {
-        const snapshot = this.data!.tasksSnapshot;
+        const { id, timestamp, ids } = this.data!.tasksSnapshot;
         this.broadcastMessage({
           type: "HEARTBEAT",
-          payload: {
-            id: snapshot.id,
-            timestamp: snapshot.timestamp,
-            ids: snapshot.ids,
-          },
+          payload: { id, timestamp, ids },
         });
       }, reInitHeartbeatMs);
 
@@ -79,229 +60,243 @@ export default class PeerProvider {
           .map((item) => item.memberData.id);
         this.removeConnections(deadConnectionsIds);
       }, checkHeartbeatMs);
-    });
 
-    this.peer.on("connection", (connection: DataConnection) => {
-      this.addConnections([connection]);
+      this.peer.on("error", (e) => {
+        const { type, message } = e as { type: string; message: string };
+        if (type === "unavailable-id" && message.includes("is taken")) {
+          this.emit("failedTab");
+        }
+      });
+
+      this.peer.on("connection", (connection: DataConnection) =>
+        this.addConnections([connection])
+      );
     });
   }
 
   get isDataConsensus() {
-    if (this.data) {
-      const connectionsData = [...this.data.connections.values()].map(
-        (item) => item.memberData.snapshotData?.id
-      );
-      return (
-        connectionsData.every((item) => item) &&
-        new Set([this.data.tasksSnapshot.id, ...connectionsData]).size === 1
-      );
-    }
-    return false;
+    if (!this.data) return false;
+    const connIds = [...this.data.connections.values()].map(
+      (item) => item.memberData.snapshotData?.id
+    );
+    return connIds.every((id) => id && id === this.data!.tasksSnapshot.id);
   }
   requestUpdate(newList: WithId<TaskData>[], ids: string[]) {
-    if (!this.requestedUpdate) {
-      const newSnapshot: TasksSnapshot = {
-        id: uuidv4(),
-        timestamp: Date.now(),
-        ids,
-        tasks: newList,
-      };
+    if (this.requestedUpdate) throw Error("Requested update already exists");
 
-      let result = new Promise((res) => res(true));
+    const newSnapshot: TasksSnapshot = {
+      id: uuidv4(),
+      timestamp: Date.now(),
+      ids,
+      tasks: newList,
+    };
 
-      if (this.data?.connections.size) {
-        let resolve = (value: true) => {},
-          reject = (value: false) => {};
-        result = new Promise((res, rej) => {
-          resolve = res;
-          reject = rej;
-        });
+    let result = Promise.resolve();
+    if (this.data?.connections.size) {
+      result = new Promise((resolve, reject) => {
         this.requestedUpdate = {
-          snapshot: { ...newSnapshot },
+          snapshot: newSnapshot,
           resolve,
           reject,
         };
-      }
-
-      this.setData({ tasksSnapshot: newSnapshot });
-      this.broadcastMessage({
-        type: "DATA_SNAPSHOT",
-        payload: newSnapshot,
       });
-      return result;
-    } else {
-      throw Error("Requested update already exist");
     }
+
+    this.setData({ tasksSnapshot: newSnapshot });
+    this.broadcastMessage({
+      type: "DATA_SNAPSHOT",
+      payload: newSnapshot,
+    });
+    return result;
   }
   removeConnections(ids: string[]) {
-    const isDiff = ids.some((id) => this.data?.connections.has(id));
-    if (isDiff) {
-      const newConnections = new Map(this.data!.connections);
-      for (const id of ids) {
-        newConnections.delete(id);
+    if (!ids.length || !this.data) return;
+    const { connections } = this.data;
+    let updated = false;
+    for (const id of ids) {
+      if (connections.delete(id)) {
+        updated = true;
       }
-      this.setData({ connections: newConnections });
     }
+    if (updated)
+      this.setData({
+        connections: new Map(connections),
+      });
   }
   async addConnections(connections: DataConnection[]) {
-    const newConnections = await filterOpenableConnections(
+    const newConns = await filterOpenableConnections(
       connections.filter((item) => !this.data?.connections.has(item.peer)),
       this.peer
     );
 
-    if (newConnections.length) {
-      const updatedConnections = new Map(this.data!.connections);
-      for (const connection of newConnections) {
-        const id = connection.peer;
-        connection.on("close", () => {
-          this.removeConnections([id]);
-        });
-        connection.on("data", (data) => {
-          if (isDataMessage(data)) {
-            switch (data.type) {
-              case "LOBBY_UPDATED":
-                {
-                  const newPeers = data.payload.membersData.filter(
-                    (item) =>
-                      !this.data?.connections.has(item.id) &&
-                      item.id !== this.data?.peerId
-                  );
-                  if (newPeers.length) {
-                    const newConns = newPeers.map((item) =>
-                      this.peer.connect(item.id)
-                    );
-                    this.addConnections(newConns);
-                  }
-                  if (this.data?.lobbyName !== data.payload.name) {
-                    this.setData({ lobbyName: data.payload.name });
-                  }
-                }
-                break;
-              case "DATA_SNAPSHOT":
-                {
-                  let isWins = false;
-                  const connectionData = this.data?.connections.get(id);
-                  connectionData!.memberData.snapshotData = getSnapshotData(
-                    data.payload
-                  );
-                  if (this.data!.tasksSnapshot.id === data.payload.id) {
-                    if (
-                      data.payload.id === this.requestedUpdate?.snapshot.id &&
-                      this.isDataConsensus
-                    ) {
-                      //update request resolved
-                      this.requestedUpdate.resolve(true);
-                      this.requestedUpdate = undefined;
-                    }
-                  } else {
-                    const diffMs =
-                      data.payload.timestamp -
-                      this.data!.tasksSnapshot.timestamp;
-
-                    isWins =
-                      diffMs < 0
-                        ? false
-                        : diffMs > 0 ||
-                          data.payload.id > this.data!.tasksSnapshot.id;
-
-                    if (isWins) {
-                      this.setData({ tasksSnapshot: data.payload });
-
-                      if (this.requestedUpdate && this.isDataConsensus) {
-                        if (
-                          this.data?.tasksSnapshot.ids.some((id) =>
-                            this.requestedUpdate!.snapshot.ids.includes(id)
-                          )
-                        ) {
-                          //update request rejected
-                          this.requestedUpdate.reject(false);
-                          this.requestedUpdate = undefined;
-                        } else {
-                          const mergedTasksMap = new Map<
-                            string,
-                            WithId<TaskData>
-                          >(
-                            this.data!.tasksSnapshot.tasks.map((task) => [
-                              task.id,
-                              task,
-                            ])
-                          );
-                          for (const id of this.requestedUpdate!.snapshot.ids) {
-                            const item =
-                              this.requestedUpdate!.snapshot.tasks.find(
-                                (task) => task.id === id
-                              )!;
-                            mergedTasksMap.set(id, item);
-                          }
-                          const newRequestedTasks = [
-                            ...mergedTasksMap.values(),
-                          ];
-
-                          //retry update request
-                          this.requestedUpdate = {
-                            ...this.requestedUpdate,
-                            snapshot: {
-                              ...this.requestedUpdate.snapshot,
-                              tasks: newRequestedTasks,
-                              timestamp: Date.now(),
-                            },
-                          };
-                        }
-                      }
-                      this.broadcastMessage({
-                        type: "DATA_SNAPSHOT",
-                        payload: data.payload,
-                      });
-                    }
-                  }
-                  if (!isWins) {
-                    this.setData({});
-                  }
-                }
-                break;
-              case "HEARTBEAT":
-                {
-                  const connectionData = this.data?.connections.get(id);
-                  if (connectionData) {
-                    connectionData.lastHeartbeat = Date.now();
-                    if (
-                      connectionData.memberData.snapshotData?.id !==
-                      data.payload.id
-                    ) {
-                      connectionData.memberData.snapshotData = data.payload;
-                      this.setData({});
-                    }
-                  }
-                }
-                break;
-            }
-          }
-        });
-        updatedConnections.set(id, {
-          connection,
-          memberData: { id },
-          lastHeartbeat: Date.now(),
-        });
+    if (!newConns.length || !this.data) {
+      if (!this.data?.connections.size && this.data?.lobbyName === null) {
+        //connect by inv failed
+        this.emit("failedConnection");
       }
-      this.setData({ connections: updatedConnections });
+      return;
+    }
 
-      this.broadcastMessage(
-        {
-          type: "DATA_SNAPSHOT",
-          payload: this.data!.tasksSnapshot,
-        },
-        newConnections.map((item) => item.peer)
-      );
+    const { connections: updatedConns, memberNames } = this.data;
 
-      this.broadcastMessage({
-        type: "LOBBY_UPDATED",
-        payload: {
-          name: this.data!.lobbyName,
-          membersData: [...this.data!.connections.values()].map(
-            (item) => item.memberData
-          ),
-        },
+    for (const conn of newConns) {
+      const id = conn.peer;
+      conn.on("close", () => this.removeConnections([id]));
+      conn.on("data", (data) => {
+        if (!isDataMessage(data) || !this.data) return;
+        const connData = this.data.connections.get(id);
+        switch (data.type) {
+          case "NAMES_UPDATED":
+            const updatedNames: [string, string][] = [];
+            for (const [memberId, memberName] of data.payload) {
+              if (
+                memberId !== this.data.peerId &&
+                this.data.memberNames.get(memberId) !== memberName
+              ) {
+                updatedNames.push([memberId, memberName]);
+                memberNames.set(memberId, memberName);
+              }
+            }
+            if (updatedNames.length) {
+              this.setData({ memberNames: new Map(memberNames) });
+              this.broadcastMessage({
+                type: "NAMES_UPDATED",
+                payload: [
+                  [this.data.peerId, this.data.peerName],
+                  ...memberNames,
+                ],
+              });
+            }
+            break;
+          case "LOBBY_UPDATED":
+            const newPeers = data.payload.membersData.filter(
+              (item) =>
+                !this.data!.connections.has(item.id) &&
+                item.id !== this.data!.peerId
+            );
+
+            if (newPeers.length) {
+              this.addConnections(
+                newPeers.map((item) => this.peer.connect(item.id))
+              );
+            }
+            if (
+              data.payload.name &&
+              data.payload.name !== this.data.lobbyName
+            ) {
+              this.setData({
+                lobbyName: data.payload.name,
+              });
+            }
+            break;
+          case "DATA_SNAPSHOT":
+            if (!connData) return;
+            connData.memberData.snapshotData = getSnapshotData(data.payload);
+
+            const { id: localId, timestamp: localTs } = this.data.tasksSnapshot;
+            const { id: remoteId, timestamp: remoteTs } = data.payload;
+
+            if (localId === remoteId) {
+              if (
+                this.requestedUpdate?.snapshot.id === remoteId &&
+                this.isDataConsensus
+              ) {
+                this.requestedUpdate.resolve();
+                this.requestedUpdate = undefined;
+              }
+              this.setData({});
+            } else {
+              const isRemoteNewer =
+                remoteTs > localTs ||
+                (remoteTs === localTs && remoteId > localId);
+              if (isRemoteNewer) {
+                this.setData({ tasksSnapshot: data.payload });
+                this.handleUpdateConflict();
+                this.broadcastMessage({
+                  type: "DATA_SNAPSHOT",
+                  payload: data.payload,
+                });
+              } else {
+                this.setData({});
+              }
+            }
+            break;
+          case "HEARTBEAT":
+            if (!connData) return;
+            connData.lastHeartbeat = Date.now();
+            if (connData.memberData.snapshotData?.id !== data.payload.id) {
+              connData.memberData.snapshotData = data.payload;
+              this.setData({});
+            }
+            break;
+        }
       });
+      updatedConns.set(id, {
+        connection: conn,
+        memberData: { id },
+        lastHeartbeat: Date.now(),
+      });
+    }
+
+    this.setData({ connections: updatedConns });
+    this.broadcastMessage(
+      {
+        type: "DATA_SNAPSHOT",
+        payload: this.data.tasksSnapshot,
+      },
+      newConns.map((item) => item.peer)
+    );
+    this.broadcastMessage(
+      {
+        type: "NAMES_UPDATED",
+        payload: [
+          [this.data.peerId, this.data.peerName],
+          ...(this.data.memberNames ?? []),
+        ],
+      },
+      newConns.map((item) => item.peer)
+    );
+    this.broadcastMessage({
+      type: "LOBBY_UPDATED",
+      payload: {
+        name: this.data.lobbyName,
+        membersData: [...this.data.connections.values()].map(
+          (item) => item.memberData
+        ),
+      },
+    });
+  }
+  private handleUpdateConflict() {
+    if (!this.requestedUpdate || !this.isDataConsensus) return;
+    const requestedUpd = this.requestedUpdate;
+    const { tasksSnapshot } = this.data!;
+    if (
+      tasksSnapshot.ids.some((id) => requestedUpd.snapshot.ids.includes(id))
+    ) {
+      //update request rejected
+      requestedUpd.reject();
+      this.requestedUpdate = undefined;
+    } else {
+      const mergedTasksMap = new Map<string, WithId<TaskData>>(
+        tasksSnapshot.tasks.map((task) => [task.id, task])
+      );
+      for (const id of requestedUpd.snapshot.ids) {
+        const item = requestedUpd.snapshot.tasks.find(
+          (task) => task.id === id
+        )!;
+        mergedTasksMap.set(id, item);
+      }
+      const newRequestedTasks = [...mergedTasksMap.values()];
+
+      //retry update request
+      this.requestedUpdate = {
+        ...requestedUpd,
+        snapshot: {
+          ...requestedUpd.snapshot,
+          tasks: newRequestedTasks,
+          timestamp: Date.now(),
+        },
+      };
     }
   }
   broadcastMessage(
@@ -321,12 +316,12 @@ export default class PeerProvider {
     this.emit("updatedData");
   }
   destroy() {
-    this.peer.disconnect();
-    this.peer.destroy();
     clearInterval(this.heartbeatInterval);
     clearInterval(this.membersCheckInterval);
-    this.requestedUpdate = undefined;
     this.setData(null);
+    this.peer.disconnect();
+    this.peer.destroy();
+    this.requestedUpdate = undefined;
   }
   on(event: PeerProviderEvent, callback: () => void) {
     if (!this.callbacks[event]) {

@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Red_Hat_Mono } from "next/font/google";
 import "./globals.css";
-import OfflineProvider from "./components/OfflineProvider";
+import OfflineContextProvider from "./providers/OfflineContextProvider";
+import BoardContextProvider from "./providers/BoardContextProvider";
+import ReduxProvider from "./providers/ReduxProvider";
+import { store } from "./store/store";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interSans = Inter({
+  variable: "--font-inter-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const redhatMono = Red_Hat_Mono({
+  variable: "--font-redhat-mono",
   subsets: ["latin"],
 });
-const APP_NAME = "TaskMesh Demo";
-const APP_DEFAULT_TITLE = "Task Mesh RTC Manager";
-const APP_TITLE_TEMPLATE = "%s - TaskMesh";
-const APP_DESCRIPTION = "Task Mesh RTC Manager";
+const APP_NAME = "Scrum Board Demo";
+const APP_DEFAULT_TITLE = "Scrum Board RTC Manager";
+const APP_TITLE_TEMPLATE = "%s - Scrum Board";
+const APP_DESCRIPTION = "Scrum Board RTC Manager";
 
 export const metadata: Metadata = {
   manifest: "/manifest.json",
@@ -61,9 +64,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${interSans.variable} ${redhatMono.variable} antialiased`}
       >
-        <OfflineProvider>{children}</OfflineProvider>
+        <ReduxProvider>
+          <OfflineContextProvider>
+            <BoardContextProvider>{children}</BoardContextProvider>
+          </OfflineContextProvider>
+        </ReduxProvider>
       </body>
     </html>
   );

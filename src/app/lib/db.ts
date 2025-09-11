@@ -1,25 +1,8 @@
-import { openDB, DBSchema, IDBPDatabase } from "idb";
-import { BoardData, TaskData, TasksSnapshot, WithId } from "./types";
+import { openDB, IDBPDatabase } from "idb";
+import { ScrumBoardDBSchema, ScrumBoardDBSchemaRaw } from "./types";
 
-export interface TaskMeshDBSchemaRaw {
-  boardData: {
-    key: "data";
-    value: BoardData;
-  };
-  offlineTasks: {
-    key: "data";
-    value: WithId<TaskData>[];
-  };
-  onlineTasksSnapshot: {
-    key: "data";
-    value: TasksSnapshot;
-  };
-}
-
-interface TaskMeshDBSchema extends TaskMeshDBSchemaRaw, DBSchema {}
-
-export async function getDb(): Promise<IDBPDatabase<TaskMeshDBSchema>> {
-  return openDB<TaskMeshDBSchema>("TaskMeshDB", 1, {
+export async function getDb(): Promise<IDBPDatabase<ScrumBoardDBSchema>> {
+  return openDB<ScrumBoardDBSchema>("Scrum BoardDB", 1, {
     upgrade(db) {
       db.createObjectStore("boardData");
       db.createObjectStore("offlineTasks");
@@ -28,20 +11,20 @@ export async function getDb(): Promise<IDBPDatabase<TaskMeshDBSchema>> {
   });
 }
 
-export async function setData<T extends keyof TaskMeshDBSchemaRaw>(
+export async function setData<T extends keyof ScrumBoardDBSchemaRaw>(
   store: T,
-  value: TaskMeshDBSchema[T]["value"]
+  value: ScrumBoardDBSchema[T]["value"]
 ) {
   const db = await getDb();
   return db.put(store, value, "data");
 }
 
-export async function getData<T extends keyof TaskMeshDBSchemaRaw>(store: T) {
+export async function getData<T extends keyof ScrumBoardDBSchemaRaw>(store: T) {
   const db = await getDb();
   return db.get(store, "data");
 }
 
-export async function removeData<T extends keyof TaskMeshDBSchemaRaw>(
+export async function removeData<T extends keyof ScrumBoardDBSchemaRaw>(
   store: T
 ) {
   const db = await getDb();

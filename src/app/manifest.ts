@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "TaskMesh Demo",
-    short_name: "TaskMesh",
-    description: "Task Mesh RTC Manager",
+    name: "Scrum Board Demo",
+    short_name: "Scrum Board",
+    description: "Scrum Board RTC Manager",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

@@ -11,6 +11,7 @@ module.exports = async (phase: string) => {
     const withSerwist = SerwistNext({
       swSrc: "src/app/sw.ts",
       swDest: "public/sw.js",
+      disable: false,
     });
     return withSerwist(nextConfig);
   }
