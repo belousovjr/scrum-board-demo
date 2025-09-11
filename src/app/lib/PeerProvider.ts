@@ -73,7 +73,7 @@ export default class PeerProvider {
       if (type === "unavailable-id" && message.includes("is taken")) {
         this.emit("failedTab");
       }
-    }); //TODO TAB ERROR CHECK
+    });
   }
 
   get isDataConsensus() {
