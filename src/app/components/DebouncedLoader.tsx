@@ -1,7 +1,13 @@
 import { Loader } from "@belousovjr/uikit";
 import { useEffect, useState } from "react";
 
-export default function DebouncedLoader({ active }: { active: boolean }) {
+export default function DebouncedLoader({
+  active,
+  className,
+}: {
+  active: boolean;
+  className?: string;
+}) {
   const [debActive, setDevActive] = useState(active);
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -14,5 +20,5 @@ export default function DebouncedLoader({ active }: { active: boolean }) {
     }
     return () => clearTimeout(timeout!);
   }, [active]);
-  return debActive && <Loader />;
+  return debActive && <Loader className={className} />;
 }

@@ -12,7 +12,6 @@ import { useOffline } from "./useOffline";
 export default function usePeerProvider({
   boardData,
   tasksSnapshot,
-  enabled,
   onFailedConnection,
   onFailedTab,
 }: UsePeerProviderOptions) {
@@ -26,15 +25,16 @@ export default function usePeerProvider({
   const [isConsensus, setIsConsensus] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !boardData) {
-      if (!offlineMode.value) {
-        providerRef.current?.destroy();
-        providerRef.current = null;
-      }
+    if (
+      !boardData ||
+      (providerRef.current && boardData.peerId !== providerRef.current.peer.id)
+    ) {
+      providerRef.current?.destroy();
+      providerRef.current = null;
       setIsConsensus(false);
       return;
     }
-    if (!providerRef.current && tasksSnapshot && !offlineMode.value) {
+    if (tasksSnapshot && !providerRef.current && !offlineMode.value) {
       providerRef.current = new PeerProvider(boardData, tasksSnapshot);
       providerRef.current.on("updatedData", () => {
         setProviderData(
@@ -55,7 +55,6 @@ export default function usePeerProvider({
     }
   }, [
     boardData,
-    enabled,
     offlineMode.value,
     onFailedConnection,
     onFailedTab,

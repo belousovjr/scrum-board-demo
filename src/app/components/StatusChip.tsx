@@ -1,4 +1,4 @@
-import { statusClasses } from "../lib/constants";
+import { statusClasses, statusesTitles } from "../lib/constants";
 import { TaskStatus } from "../lib/types";
 
 export default function StatusChip({
@@ -14,7 +14,7 @@ export default function StatusChip({
         className ?? ""
       }`}
     >
-      {status}
+      {status !== "OFFLINE" ? statusesTitles[status] : status}
     </div>
   );
 }
