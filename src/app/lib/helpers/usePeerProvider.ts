@@ -7,6 +7,7 @@ import {
   WithId,
 } from "../types";
 import { snackbar } from "../utils";
+import { useOffline } from "./useOffline";
 
 export default function usePeerProvider({
   boardData,
@@ -15,6 +16,8 @@ export default function usePeerProvider({
   onFailedConnection,
   onFailedTab,
 }: UsePeerProviderOptions) {
+  const offlineMode = useOffline();
+
   const providerRef = useRef<PeerProvider | null>(null);
   const [providerData, setProviderData] = useState<PeerProviderData | null>(
     null
@@ -24,12 +27,14 @@ export default function usePeerProvider({
 
   useEffect(() => {
     if (!enabled || !boardData) {
-      providerRef.current?.destroy();
-      providerRef.current = null;
+      if (!offlineMode.value) {
+        providerRef.current?.destroy();
+        providerRef.current = null;
+      }
       setIsConsensus(false);
       return;
     }
-    if (!providerRef.current && tasksSnapshot) {
+    if (!providerRef.current && tasksSnapshot && !offlineMode.value) {
       providerRef.current = new PeerProvider(boardData, tasksSnapshot);
       providerRef.current.on("updatedData", () => {
         setProviderData(
@@ -48,7 +53,14 @@ export default function usePeerProvider({
         onFailedTab?.();
       });
     }
-  }, [boardData, enabled, onFailedConnection, onFailedTab, tasksSnapshot]);
+  }, [
+    boardData,
+    enabled,
+    offlineMode.value,
+    onFailedConnection,
+    onFailedTab,
+    tasksSnapshot,
+  ]);
   return {
     providerData,
     isConsensus,
