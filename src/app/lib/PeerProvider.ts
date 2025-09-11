@@ -240,7 +240,15 @@ export default class PeerProvider {
       });
     }
 
-    this.setData({ connections: updatedConns });
+    const newMemberNames = [...this.data.memberNames].filter(([id]) =>
+      updatedConns.has(id)
+    );
+
+    this.setData({
+      connections: updatedConns,
+      memberNames: new Map(newMemberNames),
+    });
+
     this.broadcastMessage(
       {
         type: "DATA_SNAPSHOT",
