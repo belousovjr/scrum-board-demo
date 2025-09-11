@@ -56,7 +56,7 @@ export default function BoardContextProvider({
 
   const { providerData, requestUpdate, isConsensus } = usePeerProvider({
     boardData: boardData.data,
-    enabled: isProviderNeeded,
+    enabled: !!boardData.data,
     tasksSnapshot: prepTasksSnapshot,
     onFailedConnection: removeBoardData,
     onFailedTab: () => {
