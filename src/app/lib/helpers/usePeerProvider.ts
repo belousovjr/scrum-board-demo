@@ -24,11 +24,9 @@ export default function usePeerProvider({
 
   useEffect(() => {
     if (!enabled || !boardData) {
-      if (providerRef.current) {
-        providerRef.current.destroy();
-        providerRef.current = null;
-        setIsConsensus(false);
-      }
+      providerRef.current?.destroy();
+      providerRef.current = null;
+      setIsConsensus(false);
       return;
     }
     if (!providerRef.current && tasksSnapshot) {
