@@ -67,23 +67,23 @@ export default function Header({
     <div className="fixed w-full z-10 bg-white">
       <div
         data-scrolled={isScrolled}
-        className="flex gap-5 items-center px-2 md:px-8 h-16 mx-auto max-w-[1920px] transition-[box-shadow] data-[scrolled=true]:shadow-xs"
+        className="flex gap-5 items-center md:px-8 h-16 mx-auto px-2 w-full max-w-[1920px] transition-[box-shadow] data-[scrolled=true]:shadow-xs"
       >
-        <div className="flex gap-4 items-center shrink-1 overflow-hidden">
-          <KanbanIcon className="flex-1 min-w-6" />
+        <div className="flex gap-2 items-center overflow-hidden">
+          <KanbanIcon className="hidden lg:flex flex-1 min-w-6 mr-5" />
           {manager.boardData.data?.name && (
-            <p className="text-2xl font-bold capitalize overflow-hidden overflow-ellipsis text-nowrap">
+            <div className="text-2xl font-bold capitalize text-nowrap overflow-hidden overflow-ellipsis">
               {manager.boardData.data.name}
-            </p>
+            </div>
           )}
-          <DebouncedLoader active={manager.isLoading} />
+          <DebouncedLoader active={manager.isLoading} className="shrink-0" />
         </div>
-        <div className="flex-1 flex gap-5 items-center justify-end">
+        <div className="flex flex-1 gap-5 items-center justify-end">
           {!defIsOffline && manager.providerData && (
             <>
               {!!namedMembers.length && (
                 <button
-                  className="flex gap-2 cursor-pointer"
+                  className="flex shrink-0 gap-2 cursor-pointer"
                   onClick={() => {
                     setIsMembersOpen(true);
                   }}
@@ -138,8 +138,8 @@ export default function Header({
               <CircleXIcon />
             </button>
           )}
+          <OfflineToggle />
         </div>
-        <OfflineToggle />
       </div>
       <Modal
         isOpen={isShareOpen && !defIsOffline}
@@ -192,7 +192,7 @@ export default function Header({
         className="grid gap-5"
       >
         <p className="text-xl font-bold">Members ({namedMembers.length})</p>
-        <div className="grid gap-4 content-start min-w-[200px] min-h-[200px]">
+        <div className="grid gap-4 content-start min-w-[400px] min-h-[200px]">
           {namedMembers.map(([id, name]) => (
             <div key={id} className="flex items-center gap-4 font-medium">
               <MemberAvatar className="w-8" key={id} id={id} />

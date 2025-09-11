@@ -29,3 +29,9 @@ export const statusClasses: Record<TaskStatus | "OFFLINE", string> = {
 };
 
 export const reCalcTimeMs = 2000;
+
+export const statusesTitles: Record<TaskStatus, string> = {
+  TODO: "To Do",
+  PROGRESS: "In Progress",
+  DONE: "Done",
+};

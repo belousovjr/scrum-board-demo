@@ -103,7 +103,6 @@ export interface RequestedUpdate {
 export interface UsePeerProviderOptions {
   boardData: BoardData | null;
   tasksSnapshot: TasksSnapshot | null;
-  enabled: boolean;
   onFailedConnection?: () => void;
   onFailedTab?: () => void;
 }
