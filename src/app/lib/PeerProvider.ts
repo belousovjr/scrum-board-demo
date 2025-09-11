@@ -48,7 +48,7 @@ export default class PeerProvider {
       this.#heartbeatInterval = setInterval(() => {
         if (!checkIsOffline()) {
           const { id, timestamp, ids } = this.data!.tasksSnapshot;
-          this.broadcastMessage({
+          this.#broadcastMessage({
             type: "HEARTBEAT",
             payload: { id, timestamp, ids },
           });
@@ -60,7 +60,7 @@ export default class PeerProvider {
         const deadConnectionsIds = [...this.data!.connections.values()]
           .filter((connData) => nowMs - connData.lastHeartbeat >= lifeTimeMs)
           .map((item) => item.memberData.id);
-        this.removeConnections(deadConnectionsIds);
+        this.#removeConnections(deadConnectionsIds);
       }, checkHeartbeatMs);
 
       this.#peer.on("connection", (connection: DataConnection) =>
@@ -82,6 +82,7 @@ export default class PeerProvider {
     const connIds = [...this.data.connections.values()].map(
       (item) => item.memberData.snapshotData?.id
     );
+
     return connIds.every((id) => id && id === this.data!.tasksSnapshot.id);
   }
   connectPeers(ids: string[]) {
@@ -117,13 +118,13 @@ export default class PeerProvider {
     }
 
     this.#setData({ tasksSnapshot: newSnapshot });
-    this.broadcastMessage({
+    this.#broadcastMessage({
       type: "DATA_SNAPSHOT",
       payload: newSnapshot,
     });
     return result;
   }
-  removeConnections(ids: string[]) {
+  #removeConnections(ids: string[]) {
     if (!ids.length || !this.data) return;
     const { connections, memberNames } = this.data;
     let updated = false;
@@ -159,10 +160,10 @@ export default class PeerProvider {
         const { message } = e as { message: string };
         snackbar({ text: message, variant: "error" });
       });
-      conn.on("close", () => this.removeConnections([id]));
+      conn.on("close", () => this.#removeConnections([id]));
       conn.on("data", (data) => {
-        if (!isDataMessage(data) || !this.data) return;
-        const connData = this.data.connections.get(id);
+        const connData = this.data?.connections.get(id);
+        if (!isDataMessage(data) || !this.data || !connData) return;
         switch (data.type) {
           case "NAMES_UPDATED":
             const updatedNames: [string, string][] = [];
@@ -177,7 +178,7 @@ export default class PeerProvider {
             }
             if (updatedNames.length) {
               this.#setData({ memberNames: new Map(memberNames) });
-              this.broadcastMessage({
+              this.#broadcastMessage({
                 type: "NAMES_UPDATED",
                 payload: [
                   [this.data.peerId, this.data.peerName],
@@ -206,7 +207,6 @@ export default class PeerProvider {
             }
             break;
           case "DATA_SNAPSHOT":
-            if (!connData) return;
             connData.memberData.snapshotData = getSnapshotData(data.payload);
 
             const { id: localId, timestamp: localTs } = this.data.tasksSnapshot;
@@ -228,7 +228,7 @@ export default class PeerProvider {
               if (isRemoteNewer) {
                 this.#setData({ tasksSnapshot: data.payload });
                 this.handleUpdateConflict();
-                this.broadcastMessage({
+                this.#broadcastMessage({
                   type: "DATA_SNAPSHOT",
                   payload: data.payload,
                 });
@@ -238,7 +238,6 @@ export default class PeerProvider {
             }
             break;
           case "HEARTBEAT":
-            if (!connData) return;
             connData.lastHeartbeat = Date.now();
             if (connData.memberData.snapshotData?.id !== data.payload.id) {
               connData.memberData.snapshotData = data.payload;
@@ -258,14 +257,14 @@ export default class PeerProvider {
       connections: updatedConns,
     });
 
-    this.broadcastMessage(
+    this.#broadcastMessage(
       {
         type: "DATA_SNAPSHOT",
         payload: this.data.tasksSnapshot,
       },
       newConns.map((item) => item.peer)
     );
-    this.broadcastMessage(
+    this.#broadcastMessage(
       {
         type: "NAMES_UPDATED",
         payload: [
@@ -275,7 +274,7 @@ export default class PeerProvider {
       },
       newConns.map((item) => item.peer)
     );
-    this.broadcastMessage({
+    this.#broadcastMessage({
       type: "LOBBY_UPDATED",
       payload: {
         name: this.data.lobbyName,
@@ -318,7 +317,7 @@ export default class PeerProvider {
       };
     }
   }
-  broadcastMessage(
+  #broadcastMessage(
     message: DataMessage,
     ids = Array.from(this.data!.connections).map(([id]) => id)
   ) {

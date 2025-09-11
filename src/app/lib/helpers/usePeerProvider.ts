@@ -33,7 +33,8 @@ export default function usePeerProvider({
       if (offlineMode.value) {
         providerRef.current.disconnectAll();
       } else if (
-        boardData.peers.length > providerRef.current.data.connections.size
+        boardData.peers.length &&
+        !providerRef.current.data.connections.size
       ) {
         providerRef.current.connectPeers(boardData.peers);
       }
@@ -55,7 +56,7 @@ export default function usePeerProvider({
       providerRef.current = new PeerProvider(boardData, tasksSnapshot);
       providerRef.current.on("updatedData", () => {
         setProviderData(
-          providerRef.current!.data ? { ...providerRef.current!.data } : null
+          providerRef.current?.data ? { ...providerRef.current.data } : null
         );
         setIsConsensus(!!providerRef.current?.isDataConsensus);
       });
