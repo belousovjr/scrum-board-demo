@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { getData, removeData, setData, TaskMeshDBSchemaRaw } from "../db";
+import { getData, removeData, setData } from "../db";
+import { ScrumBoardDBSchemaRaw } from "../types";
 
 export function useDB<
-  T extends keyof TaskMeshDBSchemaRaw,
-  D extends TaskMeshDBSchemaRaw[T]["value"]
+  T extends keyof ScrumBoardDBSchemaRaw,
+  D extends ScrumBoardDBSchemaRaw[T]["value"]
 >(
   name: T
-  // initialValue: TaskMeshDBSchemaRaw[T]["value"] | null = null
+  // initialValue: ScrumBoardDBSchemaRaw[T]["value"] | null = null
 ): {
-  data: TaskMeshDBSchemaRaw[T]["value"] | null;
+  data: ScrumBoardDBSchemaRaw[T]["value"] | null;
   update: (newData: D | null) => Promise<void>;
   isLoading: boolean;
 } {

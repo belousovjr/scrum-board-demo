@@ -1,52 +1,60 @@
 import { useEffect, useRef, useState } from "react";
-import PeerProvider, { PeerProviderData } from "../PeerProvider";
-import { BoardData, TaskData, TasksSnapshot, WithId } from "../types";
-
-interface UsePeerProviderOptions {
-  boardData: BoardData | null;
-  tasksSnapshot: TasksSnapshot | null;
-  enabled: boolean;
-  onFailedConnection?: () => void;
-}
+import PeerProvider from "../PeerProvider";
+import {
+  PeerProviderData,
+  TaskData,
+  UsePeerProviderOptions,
+  WithId,
+} from "../types";
+import { snackbar } from "../utils";
 
 export default function usePeerProvider({
   boardData,
   tasksSnapshot,
   enabled,
   onFailedConnection,
+  onFailedTab,
 }: UsePeerProviderOptions) {
-  const provider = useRef<PeerProvider>(null);
+  const providerRef = useRef<PeerProvider | null>(null);
   const [providerData, setProviderData] = useState<PeerProviderData | null>(
     null
   );
-  const [isConsensus, setIsConsensus] = useState<boolean>();
+
+  const [isConsensus, setIsConsensus] = useState(false);
 
   useEffect(() => {
-    if (enabled && boardData) {
-      if (!provider.current && tasksSnapshot) {
-        provider.current = new PeerProvider(boardData, tasksSnapshot);
-        provider.current.on("updatedData", () => {
-          setProviderData(
-            provider.current!.data ? { ...provider.current!.data } : null
-          );
-          setIsConsensus(provider!.current?.isDataConsensus);
-        });
-        provider.current.on("failedConnection", () => {
-          alert("failed ref connection");
-          onFailedConnection?.();
-        });
+    if (!enabled || !boardData) {
+      if (providerRef.current) {
+        providerRef.current.destroy();
+        providerRef.current = null;
+        setIsConsensus(false);
       }
-    } else if (provider) {
-      provider.current?.destroy();
-      provider.current = null;
+      return;
     }
-  }, [boardData, tasksSnapshot, enabled]);
-
+    if (!providerRef.current && tasksSnapshot) {
+      providerRef.current = new PeerProvider(boardData, tasksSnapshot);
+      providerRef.current.on("updatedData", () => {
+        setProviderData(
+          providerRef.current!.data ? { ...providerRef.current!.data } : null
+        );
+        setIsConsensus(!!providerRef.current?.isDataConsensus);
+      });
+      providerRef.current.on("failedConnection", () => {
+        snackbar({
+          text: "Failed to connect via invite",
+          variant: "error",
+        });
+        onFailedConnection?.();
+      });
+      providerRef.current.on("failedTab", () => {
+        onFailedTab?.();
+      });
+    }
+  }, [boardData, enabled, onFailedConnection, onFailedTab, tasksSnapshot]);
   return {
     providerData,
-    requestUpdate: (newList: WithId<TaskData>[], ids: string[]) => {
-      return provider.current?.requestUpdate(newList, ids);
-    },
     isConsensus,
+    requestUpdate: (newList: WithId<TaskData>[], ids: string[]) =>
+      providerRef.current?.requestUpdate(newList, ids),
   };
 }

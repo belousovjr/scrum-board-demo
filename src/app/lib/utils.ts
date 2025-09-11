@@ -1,38 +1,38 @@
-import { v4 as uuidv4 } from "uuid";
-import { DataMessage, TasksSnapshot, TasksSnapshotData } from "./types";
+import { setNotification } from "../store/slices/appSlice";
+import { store } from "../store/store";
+import { messageTypes } from "./constants";
+import {
+  DataMessage,
+  SnackbarData,
+  TasksSnapshot,
+  TasksSnapshotData,
+} from "./types";
 import Peer, { DataConnection } from "peerjs";
+import { v4 as uuidv4 } from "uuid";
 
-export const messageTypes: DataMessage["type"][] = [
-  "LOBBY_UPDATED",
-  "DATA_SNAPSHOT",
-  "HEARTBEAT",
-];
+export function isDataMessage(data: unknown): data is DataMessage {
+  return messageTypes.includes((data as DataMessage)?.type);
+}
 
-export const isDataMessage = (data: unknown): data is DataMessage =>
-  messageTypes.includes((data as DataMessage)?.type);
-
-export const lifeTimeMs = 5000;
-export const reInitHeartbeatMs = 2000;
-export const checkHeartbeatMs = 500;
-
-export const genPeerId = () => "MT_" + uuidv4();
-
-export const filterOpenableConnections = async (
+export async function filterOpenableConnections(
   connections: DataConnection[],
   peer: Peer
-) => {
+) {
   const results = await Promise.allSettled(
     connections.map(
       (item) =>
         new Promise((resolve, reject) => {
           const connectErrorHandler = (e: unknown) => {
             const { type, message } = e as { type: string; message: string };
-            console.log("PEER ERROR", e);
+            snackbar({ text: message, variant: "error" });
             if (type === "peer-unavailable") {
               const id = message.slice("Could not connect to peer ".length);
               if (id === item.peer) {
                 peer.off("error", connectErrorHandler);
-                alert("CONNECT ERROR " + id);
+                snackbar({
+                  text: `Failed to connect to ${id}`,
+                  variant: "error",
+                });
                 reject();
               }
             }
@@ -47,19 +47,24 @@ export const filterOpenableConnections = async (
   return results
     .filter((item) => item.status === "fulfilled")
     .map((item) => item.value as DataConnection);
-};
+}
 
-export const initialTasksSnapshot: TasksSnapshot = {
-  timestamp: 0,
-  id: uuidv4(),
-  ids: [],
-  tasks: [],
-};
+export function getSnapshotData(snapshot: TasksSnapshot): TasksSnapshotData {
+  return {
+    id: snapshot.id,
+    timestamp: snapshot.timestamp,
+    ids: snapshot.ids,
+  };
+}
 
-export const getSnapshotData = (
-  snapshot: TasksSnapshot
-): TasksSnapshotData => ({
-  id: snapshot.id,
-  timestamp: snapshot.timestamp,
-  ids: snapshot.ids,
-});
+export function checkIsDesktop() {
+  return typeof window !== "undefined" ? window.innerWidth >= 1024 : true;
+}
+
+export function checkIsOffline() {
+  return typeof window !== "undefined" ? !window.navigator.onLine : false;
+}
+
+export function snackbar(data: Omit<SnackbarData, "id">) {
+  store.dispatch(setNotification({ ...data, id: uuidv4() }));
+}
