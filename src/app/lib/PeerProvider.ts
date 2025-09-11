@@ -62,18 +62,18 @@ export default class PeerProvider {
         this.removeConnections(deadConnectionsIds);
       }, checkHeartbeatMs);
 
-      this.peer.on("error", (e) => {
-        const { type, message } = e as { type: string; message: string };
-        snackbar({ text: message, variant: "error" });
-        if (type === "unavailable-id" && message.includes("is taken")) {
-          this.emit("failedTab");
-        }
-      });
-
       this.peer.on("connection", (connection: DataConnection) =>
         this.addConnections([connection])
       );
     });
+
+    this.peer.on("error", (e) => {
+      const { type, message } = e as { type: string; message: string };
+      snackbar({ text: message, variant: "error" });
+      if (type === "unavailable-id" && message.includes("is taken")) {
+        this.emit("failedTab");
+      }
+    }); //TODO TAB ERROR CHECK
   }
 
   get isDataConsensus() {
