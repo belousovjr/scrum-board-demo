@@ -4,6 +4,7 @@ import TaskItem from "./TaskItem";
 import { useMemo } from "react";
 import { Button } from "@belousovjr/uikit";
 import { PlusIcon } from "lucide-react";
+import { statusesTitles } from "../lib/constants";
 
 export default function TasksListSection({
   tasks,
@@ -34,7 +35,7 @@ export default function TasksListSection({
     <div ref={setNodeRef} className="flex flex-col gap-y-4">
       {!isMobile && (
         <div className="relative text-lg font-medium border-b-1 border-general-80 py-4 transition-colors">
-          {type}
+          {statusesTitles[type]}
           <span
             className={`absolute right-1/2 translate-x-1/2 -bottom-px w-0 transition-[width] bg-primary-100 h-0.5 ${
               isOverEffect ? "w-full" : ""
@@ -49,7 +50,6 @@ export default function TasksListSection({
         onClick={() => {
           setStatus(!isMobile ? type : "TODO");
         }}
-        disabled={isOffline !== !providerIsReady}
       >
         {!isOffline ? "New Task" : "New Offline Task"}
       </Button>

@@ -77,7 +77,7 @@ export default function TaskItem({
         )}
         <div className="gap-2 justify-start flex">
           {task && (
-            <StatusChip status={task.status} className="block md:hidden mt-4" />
+            <StatusChip status={task.status} className="block lg:hidden mt-4" />
           )}
           {task?.isOffline && <StatusChip status="OFFLINE" className="mt-4" />}
         </div>

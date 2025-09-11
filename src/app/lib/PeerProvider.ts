@@ -143,6 +143,11 @@ export default class PeerProvider {
 
     for (const conn of newConns) {
       const id = conn.peer;
+
+      conn.on("error", (e) => {
+        const { message } = e as { message: string };
+        snackbar({ text: message, variant: "error" });
+      });
       conn.on("close", () => this.removeConnections([id]));
       conn.on("data", (data) => {
         if (!isDataMessage(data) || !this.data) return;
@@ -329,9 +334,9 @@ export default class PeerProvider {
     clearInterval(this.heartbeatInterval);
     clearInterval(this.membersCheckInterval);
     this.setData(null);
+    this.requestedUpdate = undefined;
     this.peer.disconnect();
     this.peer.destroy();
-    this.requestedUpdate = undefined;
   }
   on(event: PeerProviderEvent, callback: () => void) {
     if (!this.callbacks[event]) {
