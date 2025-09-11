@@ -1,153 +1,137 @@
 "use client";
 
-import { useCallback, useDeferredValue, useMemo } from "react";
+import { useCallback, useState } from "react";
 import useBoardManager from "../lib/helpers/useBoardManager ";
-import { BoardData, TaskData, WithId } from "../lib/types";
-import OfflineToggler from "./OfflineToggler";
-import TasksListEditor from "./TasksListEditor";
-import { useOffline } from "../lib/helpers/useOffline";
-import { genPeerId } from "../lib/utils";
-import { useShortenLink } from "../lib/helpers/useShortenLink";
-import { QRCodeSVG } from "qrcode.react";
+import { BoardData } from "../lib/types";
+import { Button, Modal } from "@belousovjr/uikit";
+import dynamic from "next/dynamic";
+import InviteForm from "./InviteForm";
+const Header = dynamic(() => import("./Header"));
+const CreateBoardForm = dynamic(() => import("./CreateBoardForm"));
+const TasksList = dynamic(() => import("./TasksList"));
+const Snackbar = dynamic(() => import("./Snackbar"));
+import TimeAgo from "javascript-time-ago";
+import en from "javascript-time-ago/locale/en";
+
+TimeAgo.addDefaultLocale(en);
 
 export default function TasksManager() {
-  const {
-    boardData,
-    offlineTasks,
-    onlineTasksSnapshot,
-    isLoading,
-    providerData,
-    removeBoardData,
-    requestUpdate,
-    syncOfflineTasks,
-  } = useBoardManager();
-  const offlineMode = useOffline();
+  const manager = useBoardManager();
 
-  const defOffline = useDeferredValue(offlineMode.value);
+  const [modalState, setModalState] = useState({
+    showClose: false,
+  });
+  const [loadingState, setLoadingState] = useState({
+    ref: false,
+    close: false,
+  });
 
   const createBoard = useCallback(
     async (newBoardData: BoardData) => {
-      await boardData.update(newBoardData);
+      await manager.boardData.update(newBoardData);
     },
-    [boardData]
+    [manager]
   );
 
-  const updateOnlineHandler = useCallback(
-    async (tasks: WithId<TaskData>[], id: string) => {
-      if (requestUpdate) {
-        try {
-          await requestUpdate(tasks, [id]);
-        } catch {
-          alert("ERROR! COLLISION ");
-        }
+  const closeBoard = useCallback(async () => {
+    try {
+      setLoadingState((prev) => ({ ...prev, close: true }));
+      await manager.removeBoardData();
+      setModalState({
+        showClose: false,
+      });
+    } finally {
+      setLoadingState((prev) => ({ ...prev, close: false }));
+    }
+  }, [manager]);
+
+  const connectByRefWithPeerName = useCallback(
+    async (createWithPeerName: string | false) => {
+      try {
+        setLoadingState((prev) => ({ ...prev, ref: true }));
+        await manager.refAnswer(createWithPeerName);
+      } finally {
+        setLoadingState((prev) => ({ ...prev, ref: false }));
       }
     },
-    [requestUpdate]
+    [manager]
   );
-
-  const link = useMemo(
-    () =>
-      providerData &&
-      window.location.origin + "/?ref_id=" + providerData.peerId,
-    [providerData]
-  );
-
-  const shortLinkData = useShortenLink(link);
 
   return (
-    <div>
-      <OfflineToggler />
-      {!boardData.data ? (
-        !isLoading && (
-          <form
-            action={(data) => {
-              const newBoardData = {
-                ...Object.fromEntries(data),
-                peerId: genPeerId(),
-                peers: [],
-              } as object as BoardData;
-
-              createBoard(newBoardData);
-            }}
-          >
-            <label>
-              Name <input name="name" required />
-            </label>
-            <button disabled={boardData.isLoading}>Create Board</button>
-          </form>
-        )
-      ) : (
-        <div>
-          <p>BOARD: {boardData.data.name}</p>
-
-          {!defOffline && providerData && (
-            <div>
-              <p>{providerData!.peerId}</p>
-              {link && (
-                <>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(link).then(() => {
-                        alert("LINK COPIED");
-                      });
-                    }}
-                    className="bg-green-400"
-                  >
-                    COPY LINK
-                  </button>
-                  {shortLinkData.value ? (
-                    <QRCodeSVG
-                      size={500}
-                      value={shortLinkData.value}
-                      className="border-white border-2"
-                    />
-                  ) : !shortLinkData.isLoading ? (
-                    <button
-                      onClick={() => {
-                        shortLinkData.activate();
-                      }}
-                    >
-                      GENERATE QR
-                    </button>
-                  ) : (
-                    "GENERATE..."
-                  )}
-                </>
-              )}
-              <p>MEMBERS</p>
-              {providerData!.connections.size ? (
-                [...providerData!.connections.values()].map((item) => (
-                  <div key={item.memberData.id}>{item.memberData.id}</div>
-                ))
-              ) : (
-                <p>{"No members :("}</p>
-              )}
+    <>
+      <Header
+        onCloseBoard={() =>
+          setModalState((prev) => ({ ...prev, showClose: true }))
+        }
+      />
+      <div className="grid grid-cols-4 lg:grid-cols-12 gap-8 items-center px-2 pt-16 pb-8 md:px-8 mx-auto w-full min-h-dvh max-w-[1920px]">
+        {manager && !manager.boardData.data ? (
+          !manager.isLoading && (
+            <div className="col-span-4 lg:col-start-5">
+              <CreateBoardForm create={createBoard} />
             </div>
-          )}
-          <button onClick={removeBoardData}>EXIT BOARD DATA</button>
+          )
+        ) : (
+          <div className="col-span-4 lg:col-span-12 min-h-full">
+            <TasksList />
+          </div>
+        )}
+      </div>
 
-          <TasksListEditor
-            list={onlineTasksSnapshot.data?.tasks || null}
-            update={updateOnlineHandler}
-            isLoading={onlineTasksSnapshot.isLoading}
-            disabled={defOffline}
-            title="ONLINE TASKS"
-          />
-          <TasksListEditor
-            list={offlineTasks.data}
-            update={offlineTasks.update}
-            isLoading={offlineTasks.isLoading}
-            title="OFFLINE TASKS"
-            disabled={!defOffline}
-          />
-          {!!offlineTasks.data?.length && !offlineMode.value && (
-            <button onClick={syncOfflineTasks} disabled={isLoading}>
-              SYNC OFFLINE
-            </button>
-          )}
-        </div>
+      {!!manager && (
+        <>
+          <Modal
+            isOpen={manager.tabError}
+            className="w-[520px] bg-red-100 text-white grid gap-5"
+          >
+            <p className="text-xl font-bold">
+              The application is open in another tab
+            </p>
+            <div className="font-sans">Please return to the active tab.</div>
+          </Modal>
+          <Modal
+            isOpen={manager.refOffer}
+            className="w-[520px] bg-primary-100 text-white"
+          >
+            <InviteForm
+              defaultName={manager.boardData.data?.peerName}
+              loading={loadingState.ref}
+              connect={connectByRefWithPeerName}
+              close={() => connectByRefWithPeerName(false)}
+            />
+          </Modal>
+          <Modal
+            isOpen={!!modalState.showClose}
+            onClose={() =>
+              setModalState((prev) => ({ ...prev, showClose: false }))
+            }
+            className="w-[600px] grid gap-5"
+          >
+            <p className="text-xl font-bold">Close Board</p>
+            <p className="text-base">Data may be lost permanently.</p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="destructiveSecondary"
+                onClick={() =>
+                  setModalState((prev) => ({ ...prev, showClose: false }))
+                }
+                type="button"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={closeBoard}
+                loading={loadingState.close}
+                autoFocus
+              >
+                Delete
+              </Button>
+            </div>
+          </Modal>
+        </>
       )}
-      <p>{isLoading ? "Loading..." : <span>&nbsp;</span>}</p>
-    </div>
+      <Snackbar />
+    </>
   );
 }
