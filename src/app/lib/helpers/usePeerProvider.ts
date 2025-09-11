@@ -25,9 +25,26 @@ export default function usePeerProvider({
   const [isConsensus, setIsConsensus] = useState(false);
 
   useEffect(() => {
+    //sync members for custom offline mode
+    if (
+      providerRef.current?.data &&
+      providerRef.current.data.peerId === boardData?.peerId
+    ) {
+      if (offlineMode.value) {
+        providerRef.current.disconnectAll();
+      } else if (
+        boardData.peers.length > providerRef.current.data.connections.size
+      ) {
+        providerRef.current.connectPeers(boardData.peers);
+      }
+    }
+  }, [boardData, offlineMode.value]);
+
+  useEffect(() => {
     if (
       !boardData ||
-      (providerRef.current && boardData.peerId !== providerRef.current.peer.id)
+      (providerRef.current?.data &&
+        boardData.peerId !== providerRef.current.data.peerId)
     ) {
       providerRef.current?.destroy();
       providerRef.current = null;

@@ -6,7 +6,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { checkIsOffline } from "../lib/utils";
+import { checkIsNativeOffline } from "../lib/utils";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setOffline } from "../store/slices/appSlice";
 
@@ -15,8 +15,8 @@ export const OfflineContext = createContext<{
   nativeValue: boolean;
   setValue?: (value: boolean) => void;
 }>({
-  value: checkIsOffline(),
-  nativeValue: checkIsOffline(),
+  value: checkIsNativeOffline(),
+  nativeValue: checkIsNativeOffline(),
 });
 
 export default function OfflineContextProvider({
@@ -24,7 +24,7 @@ export default function OfflineContextProvider({
 }: {
   children: ReactNode;
 }) {
-  const [isNativeOffline, setIsNativeOffline] = useState(checkIsOffline);
+  const [isNativeOffline, setIsNativeOffline] = useState(checkIsNativeOffline);
   const isOffline = useAppSelector((store) => store.app.offline);
   const appDispatch = useAppDispatch();
 

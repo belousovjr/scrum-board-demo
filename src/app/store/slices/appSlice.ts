@@ -1,4 +1,4 @@
-import { checkIsOffline } from "@/app/lib/utils";
+import { checkIsNativeOffline } from "@/app/lib/utils";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AppState {
@@ -6,7 +6,7 @@ interface AppState {
 }
 
 const initialState: AppState = {
-  offline: checkIsOffline(),
+  offline: checkIsNativeOffline(),
 };
 
 const appSlice = createSlice({
