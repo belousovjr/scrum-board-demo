@@ -2,12 +2,14 @@ import { Notification } from "@belousovjr/uikit";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { setNotification } from "../store/slices/appSlice";
+import { setNotification } from "../store/slices/notificationsSlice";
 
 export default function Snackbar() {
   const [isMounted, setIsMounted] = useState(false);
   const [lastInteractive, setLastInteractive] = useState<number | null>(null);
-  const notification = useAppSelector((store) => store.app.notification);
+  const notification = useAppSelector(
+    (store) => store.notifications.notification
+  );
   const appDispatch = useAppDispatch();
 
   useEffect(() => {

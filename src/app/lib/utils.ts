@@ -1,4 +1,4 @@
-import { setNotification } from "../store/slices/appSlice";
+import { setNotification } from "../store/slices/notificationsSlice";
 import { store } from "../store/store";
 import { messageTypes } from "./constants";
 import {

@@ -73,7 +73,7 @@ export default class PeerProvider {
       if (type === "unavailable-id" && message.includes("is taken")) {
         this.emit("failedTab");
       }
-    }); //TODO TAB ERROR CHECK
+    });
   }
 
   get isDataConsensus() {
@@ -240,7 +240,15 @@ export default class PeerProvider {
       });
     }
 
-    this.setData({ connections: updatedConns });
+    const newMemberNames = [...this.data.memberNames].filter(([id]) =>
+      updatedConns.has(id)
+    );
+
+    this.setData({
+      connections: updatedConns,
+      memberNames: new Map(newMemberNames),
+    });
+
     this.broadcastMessage(
       {
         type: "DATA_SNAPSHOT",

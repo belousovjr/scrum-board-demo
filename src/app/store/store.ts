@@ -2,9 +2,11 @@ import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import storage from "redux-persist/lib/storage";
 import { persistReducer, persistStore, WebStorage } from "redux-persist";
 import appReducer from "./slices/appSlice";
+import notificationsReducer from "./slices/notificationsSlice";
 
 const reducers = {
   app: appReducer,
+  notifications: notificationsReducer,
 } as const;
 
 const rootReducer = combineReducers(reducers);
