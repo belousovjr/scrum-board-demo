@@ -80,16 +80,16 @@ export default function TasksList() {
     if (defIsDesktop) {
       const tasksByStatus: Record<TaskStatus, WithId<TaskData>[]> = {
         TODO: [],
-        PROCESS: [],
-        COMPLETED: [],
+        PROGRESS: [],
+        DONE: [],
       };
       for (const [, task] of sortedTasks) {
         tasksByStatus[task.status].push(task);
       }
       return [
         { type: "TODO", tasks: tasksByStatus.TODO },
-        { type: "PROCESS", tasks: tasksByStatus.PROCESS },
-        { type: "COMPLETED", tasks: tasksByStatus.COMPLETED },
+        { type: "PROGRESS", tasks: tasksByStatus.PROGRESS },
+        { type: "DONE", tasks: tasksByStatus.DONE },
       ];
     } else {
       return [
@@ -234,13 +234,13 @@ export default function TasksList() {
               type={type}
               isOffline={defIsOffline}
               providerIsReady={!!manager.providerData}
-              setDeletedTask={(task) =>
+              onDelete={(task) =>
                 setModalState((prev) => ({ ...prev, deleteTask: task }))
               }
-              setSelectedStatus={(status) =>
+              setStatus={(status) =>
                 setModalState((prev) => ({ ...prev, selectedStatus: status }))
               }
-              setShowTask={(task) =>
+              onShow={(task) =>
                 setModalState((prev) => ({ ...prev, showTask: task }))
               }
               setEditTask={(task) =>

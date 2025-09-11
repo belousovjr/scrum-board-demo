@@ -5,7 +5,7 @@ import usePeerProvider from "./helpers/usePeerProvider";
 import { ComponentProps } from "react";
 import { Notification } from "@belousovjr/uikit";
 
-export type TaskStatus = "TODO" | "PROCESS" | "COMPLETED";
+export type TaskStatus = "TODO" | "PROGRESS" | "DONE";
 
 export interface TaskData {
   title: string;
