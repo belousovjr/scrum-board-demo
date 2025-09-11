@@ -12,12 +12,13 @@ const TasksList = dynamic(() => import("./TasksList"));
 const Snackbar = dynamic(() => import("./Snackbar"));
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
+import useLocalTimeValid from "../lib/helpers/useLocalTimeValid";
 
 TimeAgo.addDefaultLocale(en);
 
 export default function TasksManager() {
   const manager = useBoardManager();
-
+  const isTimeValid = useLocalTimeValid();
   const [modalState, setModalState] = useState({
     showClose: false,
   });
@@ -126,6 +127,25 @@ export default function TasksManager() {
                 autoFocus
               >
                 Delete
+              </Button>
+            </div>
+          </Modal>
+          <Modal
+            isOpen={!isTimeValid}
+            className="w-[520px] bg-red-100 text-white grid gap-5"
+          >
+            <p className="text-xl font-bold">Incorrect Local Time</p>
+            <p className="text-base">Please update your device clock.</p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  window.location.reload();
+                }}
+                loading={loadingState.close}
+                autoFocus
+              >
+                Reload Page
               </Button>
             </div>
           </Modal>

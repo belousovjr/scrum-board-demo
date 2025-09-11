@@ -4,7 +4,7 @@ interface ShortResponse {
   short_url: string;
 }
 
-export const getShortenLink = async (url: string) => {
+export async function getShortenLink(url: string) {
   const response = await fetch(
     "https://zip1.io/api/create",
 
@@ -16,4 +16,7 @@ export const getShortenLink = async (url: string) => {
   );
   const result: ShortResponse = await response.json();
   return result.short_url;
-};
+}
+export async function getCurrentTime() {
+  return Date.now();
+}

@@ -118,10 +118,15 @@ export default function BoardContextProvider({
     }
     try {
       const offlineTasksCount = offlineTasks.data.length;
+      const now = Date.now();
       await requestUpdate(
         [
           ...onlineTasksSnapshot.data.tasks,
-          ...offlineTasks.data.map((task) => ({ ...task, isOffline: false })),
+          ...offlineTasks.data.map((task) => ({
+            ...task,
+            updatedAt: now,
+            isOffline: false,
+          })),
         ],
         offlineTasks.data.map((item) => item.id)
       );
