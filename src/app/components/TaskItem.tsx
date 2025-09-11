@@ -114,10 +114,10 @@ export default function TaskItem({
       />
       {!hideActions && (
         <button
-          title="Show Task"
+          title="Drag and Drop Task"
           onClick={onShow}
           disabled={disabled}
-          className="absolute text-general-80 transition disabled:text-general-50 top-2 right-3 cursor-grab hidden lg:block"
+          className="absolute text-general-80 transition disabled:hidden top-2 right-3 cursor-grab hidden lg:block"
           {...listeners}
         >
           <GripHorizontalIcon />
