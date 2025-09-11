@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getShortenLink } from "../api";
+import { getShortenLink } from "../actions";
 
 export function useShortenLink(link: string | null) {
   const [shortenLink, setShortenLink] = useState<string | null>(null);

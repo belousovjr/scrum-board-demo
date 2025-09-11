@@ -1,5 +1,6 @@
 import { setNotification } from "../store/slices/notificationsSlice";
 import { store } from "../store/store";
+import { getCurrentTime } from "./actions";
 import { messageTypes } from "./constants";
 import {
   DataMessage,
@@ -71,4 +72,13 @@ export function checkIsOffline() {
 
 export function snackbar(data: Omit<SnackbarData, "id">) {
   store.dispatch(setNotification({ ...data, id: uuidv4() }));
+}
+
+export async function getCurrentTimeOffset() {
+  const start = Date.now();
+  const remoteTime = await getCurrentTime();
+  const end = Date.now();
+  const requestDiff = end - start;
+  const diff = (remoteTime - start + requestDiff) / 2;
+  return Math.round(diff / (1000 * 60));
 }
