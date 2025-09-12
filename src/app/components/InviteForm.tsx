@@ -1,5 +1,6 @@
 import { Button, Textfield } from "@belousovjr/uikit";
-import { UserIcon } from "lucide-react";
+import { MemberAvatar } from "./MemberAvatar";
+import { useState } from "react";
 
 export default function InviteForm({
   defaultName,
@@ -12,6 +13,8 @@ export default function InviteForm({
   connect: (name: string) => unknown;
   close: () => unknown;
 }) {
+  const [peerName, setPeerName] = useState(defaultName ?? "");
+
   return (
     <form
       action={(data) => {
@@ -31,9 +34,12 @@ export default function InviteForm({
         required
         minLength={4}
         label={<span className="text-white">Peer Name</span>}
-        rightIcon={<UserIcon />}
         defaultValue={defaultName}
         autoFocus={!defaultName}
+        rightIcon={
+          peerName ? <MemberAvatar id={peerName} className="w-6" /> : undefined
+        }
+        onChange={(e) => setPeerName(e.target.value)}
       />
       <div className="flex justify-end gap-2">
         <Button

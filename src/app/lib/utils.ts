@@ -26,14 +26,11 @@ export async function filterOpenableConnections(
           const connectErrorHandler = (e: unknown) => {
             const { type, message } = e as { type: string; message: string };
             snackbar({ text: message, variant: "error" });
+
             if (type === "peer-unavailable") {
               const id = message.slice("Could not connect to peer ".length);
               if (id === item.peer) {
                 peer.off("error", connectErrorHandler);
-                snackbar({
-                  text: `Failed to connect to ${id}`,
-                  variant: "error",
-                });
                 reject();
               }
             }
