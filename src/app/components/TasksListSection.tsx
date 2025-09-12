@@ -37,7 +37,7 @@ export default function TasksListSection({
   );
 
   return (
-    <div ref={setNodeRef} className="flex flex-col gap-y-4">
+    <div ref={setNodeRef} className="flex flex-col gap-y-4 overflow-hidden">
       {!isMobile && (
         <div className="relative text-lg font-medium border-b-1 border-general-80 py-4 transition-colors">
           {statusesTitles[type]}
@@ -59,7 +59,7 @@ export default function TasksListSection({
       >
         {!isOffline ? "New Task" : "New Offline Task"}
       </Button>
-      <div className="flex flex-col gap-y-4 transition-transform">
+      <div className="flex flex-col gap-y-4 transition-transform0">
         {tasks!.map((item) => (
           <TaskItem
             key={item.id}
