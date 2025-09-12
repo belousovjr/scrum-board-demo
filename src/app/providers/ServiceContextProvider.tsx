@@ -124,11 +124,18 @@ export default function ServiceContextProvider({
 
   useEffect(() => {
     const changeVisHandler = () => {
-      setIsVisible(document.visibilityState === "visible");
+      setIsVisible(
+        !!document.activeElement && document.visibilityState === "visible"
+      );
     };
+
     document.addEventListener("visibilitychange", changeVisHandler);
+    document.addEventListener("focus", changeVisHandler);
+    document.addEventListener("blur", changeVisHandler);
     return () => {
       document.removeEventListener("visibilitychange", changeVisHandler);
+      document.removeEventListener("focus", changeVisHandler);
+      document.removeEventListener("blur", changeVisHandler);
     };
   }, []);
 
