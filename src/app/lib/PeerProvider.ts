@@ -31,6 +31,8 @@ export default class PeerProvider {
   #heartbeatInterval: NodeJS.Timeout | undefined;
   #membersCheckInterval: NodeJS.Timeout | undefined;
   #requestedUpdate: RequestedUpdate | undefined;
+  #isVisible = true;
+  #idlePeers = new Set<string>();
 
   constructor(boardData: BoardData, tasksSnapshot: TasksSnapshot) {
     this.#peer = this.#setupPeer(boardData, tasksSnapshot, boardData.peerId);
@@ -51,38 +53,43 @@ export default class PeerProvider {
   ) {
     const peer = new Peer(peerId);
     peer.on("open", () => {
-      this.#setData({
-        peerId,
-        peerName: boardData.peerName,
-        tasksSnapshot,
-        lobbyName: boardData.name,
-        connections: new Map(),
-        memberNames: new Map(boardData.memberNames),
-      });
-
-      if (boardData.peers.length) {
-        this.#connectPeers(boardData.peers);
-      }
-
-      this.#heartbeatInterval = setInterval(() => {
-        const { id, timestamp, ids } = this.data!.tasksSnapshot;
-        this.#broadcastMessage({
-          type: "HEARTBEAT",
-          payload: { id, timestamp, ids },
+      const isReconnect = !!this.data;
+      if (!isReconnect) {
+        this.#setData({
+          peerId,
+          peerName: boardData.peerName,
+          tasksSnapshot,
+          lobbyName: boardData.name,
+          connections: new Map(),
+          memberNames: new Map(boardData.memberNames),
         });
-      }, reInitHeartbeatMs);
 
-      this.#membersCheckInterval = setInterval(() => {
-        const nowMs = Date.now();
-        const deadConnectionsIds = [...this.data!.connections.values()]
-          .filter((connData) => nowMs - connData.lastHeartbeat >= lifeTimeMs)
-          .map((item) => cutIdBase(item.memberData.id));
-        this.#removeConnections(deadConnectionsIds);
-      }, checkHeartbeatMs);
+        if (boardData.peers.length) {
+          this.#connectPeers(boardData.peers);
+        }
 
-      peer.on("connection", (connection: DataConnection) => {
-        this.#addConnections([connection]);
-      });
+        this.#heartbeatInterval = setInterval(() => {
+          const { id, timestamp, ids } = this.data!.tasksSnapshot;
+          this.#broadcastMessage({
+            type: "HEARTBEAT",
+            payload: { id, timestamp, ids },
+          });
+        }, reInitHeartbeatMs);
+
+        this.#membersCheckInterval = setInterval(() => {
+          const nowMs = Date.now();
+          const deadConnectionsIds = [...this.data!.connections.values()]
+            .filter((connData) => nowMs - connData.lastHeartbeat >= lifeTimeMs)
+            .map((item) => item.memberData.id);
+          this.#removeConnections(deadConnectionsIds);
+        }, checkHeartbeatMs);
+
+        peer.on("connection", (connection: DataConnection) =>
+          this.#addConnections([connection])
+        );
+      } else {
+        this.#reconnectIdlePeers();
+      }
     });
 
     peer.on("error", (e) => {
@@ -94,11 +101,15 @@ export default class PeerProvider {
           tasksSnapshot,
           genId(boardData.peerId)
         );
-      } else if (type !== "peer-unavailable") {
-        snackbar({ text: message, variant: "error" });
       }
     });
     return peer;
+  }
+  #reconnectIdlePeers() {
+    const ids = [...this.#idlePeers];
+    this.#removeConnections(ids);
+    this.#idlePeers.clear();
+    this.#connectPeers(ids);
   }
   #connectPeers(ids: string[]) {
     const filteredIds = ids.filter(
@@ -106,6 +117,16 @@ export default class PeerProvider {
     );
     if (filteredIds.length) {
       this.#addConnections(filteredIds.map((id) => this.#peer.connect(id)));
+    }
+  }
+  visibleChange(value: boolean) {
+    this.#isVisible = value;
+    if (value) {
+      if (!this.#peer.open) {
+        this.#peer.reconnect();
+      } else {
+        this.#reconnectIdlePeers();
+      }
     }
   }
 
@@ -139,32 +160,30 @@ export default class PeerProvider {
   }
   #removeConnections(ids: string[]) {
     if (!ids.length || !this.data) return;
+
     const { connections, memberNames } = this.data;
     let updated = false;
     for (const id of ids) {
-      if (connections.delete(cutIdBase(id))) {
-        updated = true;
-        memberNames.delete(cutIdBase(id));
+      if (connections.has(cutIdBase(id))) {
+        if (!this.#isVisible) {
+          this.#idlePeers.add(id);
+        } else {
+          updated = true;
+          connections.delete(cutIdBase(id));
+          memberNames.delete(cutIdBase(id));
+        }
       }
     }
-    if (updated)
+    if (updated) {
       this.#setData({
         connections: new Map(connections),
         memberNames: new Map(memberNames),
       });
-  }
-  async #addConnections(connections: DataConnection[], isSecondTry = false) {
-    const newConns = await filterOpenableConnections(
-      connections,
-      this.#peer,
-      !isSecondTry
-    );
-
-    if (!newConns.length && isSecondTry) {
-      this.#removeConnections(connections.map((con) => con.peer));
-
-      return;
     }
+  }
+  async #addConnections(connections: DataConnection[]) {
+    const newConns = await filterOpenableConnections(connections, this.#peer);
+
     if (!newConns.length || !this.data) {
       if (!this.data?.connections.size && this.data?.lobbyName === null) {
         //connect by inv failed
@@ -172,23 +191,13 @@ export default class PeerProvider {
       }
       return;
     }
-
     const { connections: updatedConns, memberNames } = this.data;
 
     for (const conn of newConns) {
       const id = conn.peer;
 
-      conn.on("error", (e) => {
-        const { message } = e as { message: string };
-        snackbar({ text: message, variant: "error" });
-      });
       conn.on("close", () => {
-        if (this.#peer.open) {
-          const retryConn = this.#peer.connect(id);
-
-          this.#removeConnections([id]);
-          this.#addConnections([retryConn], true);
-        }
+        this.#removeConnections([id]);
       });
       conn.on("data", (data) => {
         const connData = this.data?.connections.get(cutIdBase(id));

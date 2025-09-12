@@ -14,7 +14,7 @@ export default function usePeerProvider({
   tasksSnapshot,
   onFailedConnection,
 }: UsePeerProviderOptions) {
-  const { isOffline, isPrimaryPage } = useServiceContext();
+  const { isOffline, isPrimaryPage, isVisible } = useServiceContext();
   const [isConsensus, setIsConsensus] = useState(false);
 
   const providerRef = useRef<PeerProvider | null>(null);
@@ -46,6 +46,10 @@ export default function usePeerProvider({
       });
     }
   }, [boardData, isPrimaryPage, isOffline, onFailedConnection, tasksSnapshot]);
+
+  useEffect(() => {
+    providerRef.current?.visibleChange(isVisible);
+  }, [isVisible]);
 
   return {
     providerData,

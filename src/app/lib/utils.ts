@@ -17,8 +17,7 @@ export function isDataMessage(data: unknown): data is DataMessage {
 
 export async function filterOpenableConnections(
   connections: DataConnection[],
-  peer: Peer,
-  withNotification: boolean
+  peer: Peer
 ) {
   const results = await Promise.allSettled(
     connections.map(
@@ -29,13 +28,8 @@ export async function filterOpenableConnections(
             item.off("open", openHandler);
             const { type, message } = e as { type: string; message: string };
 
-            if (message.includes(item.peer)) {
-              if (withNotification) {
-                snackbar({ text: message, variant: "error" });
-              }
-              if (type === "peer-unavailable") {
-                reject();
-              }
+            if (type === "peer-unavailable" && message.includes(item.peer)) {
+              reject();
             }
           };
           const openHandler = () => {

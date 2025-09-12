@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { BoardManager } from "../lib/types";
@@ -29,6 +30,7 @@ export default function BoardContextProvider({
   const router = useRouter();
   const pathname = usePathname();
   const [refId, setRefId] = useState<string | undefined>();
+  const isInvChecked = useRef(false);
 
   const prepTasksSnapshot = useMemo(
     () =>
@@ -148,8 +150,9 @@ export default function BoardContextProvider({
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refIdParam = params.get("inv");
-    if (refIdParam) {
+    if (refIdParam && !isInvChecked.current) {
       setRefId(refIdParam);
+      isInvChecked.current = true;
       router.replace(pathname, { scroll: false });
     }
   }, [pathname, router]);
