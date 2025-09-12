@@ -19,10 +19,10 @@ export default function TasksListSection({
   tasks: WithId<TaskData>[];
   type: TaskType;
   providerIsReady: boolean;
-  onDelete: (task: WithId<TaskData>) => unknown;
-  setStatus: (task: TaskStatus) => unknown;
-  onShow: (task: WithId<TaskData>) => unknown;
-  setEditTask: (task: WithId<TaskData>) => unknown;
+  onDelete: (taskId: string) => unknown;
+  setStatus: (status: TaskStatus) => unknown;
+  onShow: (taskId: string) => unknown;
+  setEditTask: (taskId: string) => unknown;
 }) {
   const { isOffline } = useServiceContext();
   const { isOver, setNodeRef } = useDroppable({
@@ -65,14 +65,14 @@ export default function TasksListSection({
             key={item.id}
             task={item}
             onDelete={() => {
-              onDelete(item);
+              onDelete(item.id);
             }}
             onEdit={() => {
               setStatus(item.status);
-              setEditTask(item);
+              setEditTask(item.id);
             }}
             onShow={() => {
-              onShow(item);
+              onShow(item.id);
             }}
             disabled={disabled}
             hideActions={isOffline === !item.isOffline}

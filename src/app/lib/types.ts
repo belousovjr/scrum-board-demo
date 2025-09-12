@@ -138,10 +138,10 @@ export interface BoardManager {
 export type TaskType = TaskStatus | "MOBILE";
 
 export interface ModalState {
-  editTask: WithId<TaskData> | null;
+  editTask: string | null;
   selectedStatus: TaskStatus | null;
-  deleteTask: WithId<TaskData> | null;
-  showTask: WithId<TaskData> | null;
+  deleteTask: string | null;
+  showTask: string | null;
 }
 
 export interface SnackbarData {
