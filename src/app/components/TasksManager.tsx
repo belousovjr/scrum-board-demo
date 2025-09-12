@@ -82,27 +82,6 @@ export default function TasksManager() {
       {!!manager && (
         <>
           <Modal
-            isOpen={!isPrimaryPage}
-            className="w-[520px] bg-red-100 text-white grid gap-5"
-          >
-            <p className="text-xl font-bold">
-              The application is open in another tab
-            </p>
-            <div className="font-sans">Please close the rest of the pages.</div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  window.location.reload();
-                }}
-                loading={loadingState.close}
-                autoFocus
-              >
-                Reload Page
-              </Button>
-            </div>
-          </Modal>
-          <Modal
             isOpen={manager.refOffer}
             className="w-[520px] bg-primary-100 text-white"
           >
@@ -143,8 +122,29 @@ export default function TasksManager() {
             </div>
           </Modal>
           <Modal
+            isOpen={!isPrimaryPage}
+            className="w-[520px] bg-red-100 text-white grid gap-5 z-50"
+          >
+            <p className="text-xl font-bold">
+              The application is open in another tab
+            </p>
+            <div className="font-sans">Please close the rest of the pages.</div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  window.location.reload();
+                }}
+                loading={loadingState.close}
+                autoFocus
+              >
+                Reload Page
+              </Button>
+            </div>
+          </Modal>
+          <Modal
             isOpen={!isTimeValid}
-            className="w-[520px] bg-red-100 text-white grid gap-5"
+            className="w-[520px] bg-red-100 text-white grid gap-5 z-50"
           >
             <p className="text-xl font-bold">Incorrect Local Time</p>
             <p className="text-base">Please update your device clock.</p>
