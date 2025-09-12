@@ -82,7 +82,7 @@ export default function TasksManager() {
       {!!manager && (
         <>
           <Modal
-            isOpen={manager.refOffer}
+            isOpen={isPrimaryPage && isTimeValid && manager.refOffer}
             className="w-[520px] bg-primary-100 text-white"
           >
             <InviteForm
@@ -121,48 +121,48 @@ export default function TasksManager() {
               </Button>
             </div>
           </Modal>
-          <Modal
-            isOpen={!isPrimaryPage}
-            className="w-[520px] bg-red-100 text-white grid gap-5 z-50"
-          >
-            <p className="text-xl font-bold">
-              The application is open in another tab
-            </p>
-            <div className="font-sans">Please close the rest of the pages.</div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  window.location.reload();
-                }}
-                loading={loadingState.close}
-                autoFocus
-              >
-                Reload Page
-              </Button>
-            </div>
-          </Modal>
-          <Modal
-            isOpen={!isTimeValid}
-            className="w-[520px] bg-red-100 text-white grid gap-5 z-50"
-          >
-            <p className="text-xl font-bold">Incorrect Local Time</p>
-            <p className="text-base">Please update your device clock.</p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  window.location.reload();
-                }}
-                loading={loadingState.close}
-                autoFocus
-              >
-                Reload Page
-              </Button>
-            </div>
-          </Modal>
         </>
       )}
+      <Modal
+        isOpen={!isPrimaryPage}
+        className="w-[520px] bg-red-100 text-white grid gap-5"
+      >
+        <p className="text-xl font-bold">
+          The application is open in another tab
+        </p>
+        <div className="font-sans">Please close the rest of the pages.</div>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="destructive"
+            onClick={() => {
+              window.location.reload();
+            }}
+            loading={loadingState.close}
+            autoFocus
+          >
+            Reload Page
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={!isTimeValid}
+        className="w-[520px] bg-red-100 text-white grid gap-5"
+      >
+        <p className="text-xl font-bold">Incorrect Local Time</p>
+        <p className="text-base">Please update your device clock.</p>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="destructive"
+            onClick={() => {
+              window.location.reload();
+            }}
+            loading={loadingState.close}
+            autoFocus
+          >
+            Reload Page
+          </Button>
+        </div>
+      </Modal>
       <Snackbar />
     </>
   );
