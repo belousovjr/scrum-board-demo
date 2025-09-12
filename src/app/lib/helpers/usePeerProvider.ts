@@ -42,10 +42,6 @@ export default function usePeerProvider({
         setIsConsensus(!!providerRef.current?.isDataConsensus);
       });
       providerRef.current.on("failedConnection", () => {
-        snackbar({
-          text: "Failed to connect via invite",
-          variant: "error",
-        });
         onFailedConnection?.();
       });
     }
