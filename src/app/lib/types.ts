@@ -27,7 +27,11 @@ export interface BoardData {
 
 export type WithId<T extends object> = T & { id: string };
 
-export type PeerProviderEvent = "updatedData" | "failedConnection";
+export type PeerProviderEvent = {
+  updatedData: undefined;
+  failedConnection: undefined;
+  closedPeer: { id: string };
+};
 
 export interface BoardMemberData {
   id: string;
