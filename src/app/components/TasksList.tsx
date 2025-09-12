@@ -112,7 +112,7 @@ export default function TasksList() {
     return {
       editTask: editTask?.isOffline === isOffline ? editTask : null,
       deleteTask: deleteTask?.isOffline === isOffline ? deleteTask : null,
-      showTask: showTask?.isOffline === isOffline ? showTask : null,
+      showTask,
     };
   }, [sortedTasks, modalState, isOffline]);
 
