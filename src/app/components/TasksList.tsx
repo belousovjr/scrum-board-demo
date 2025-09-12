@@ -39,6 +39,7 @@ export default function TasksList() {
     delete: false,
     close: false,
   });
+
   const onlineTasks = useMemo(
     () => manager.onlineTasksSnapshot.data?.tasks ?? [],
     [manager.onlineTasksSnapshot.data]
@@ -102,6 +103,19 @@ export default function TasksList() {
     }
   }, [sortedTasks, defIsDesktop]);
 
+  const modelTasks = useMemo(() => {
+    const [editTask, deleteTask, showTask] = [
+      sortedTasks.get(modalState.editTask!),
+      sortedTasks.get(modalState.deleteTask!),
+      sortedTasks.get(modalState.showTask!),
+    ];
+    return {
+      editTask: editTask?.isOffline === isOffline ? editTask : null,
+      deleteTask: deleteTask?.isOffline === isOffline ? deleteTask : null,
+      showTask: showTask?.isOffline === isOffline ? showTask : null,
+    };
+  }, [sortedTasks, modalState, isOffline]);
+
   const cancelEdit = useCallback(() => {
     setModalState((prev) => ({
       ...prev,
@@ -139,26 +153,21 @@ export default function TasksList() {
   );
 
   const deleteItem = useCallback(async () => {
-    if (!modalState.deleteTask) return;
+    const task = modelTasks.deleteTask;
+    if (!task) return;
 
-    const tasks = modalState.deleteTask.isOffline ? offlineTasks : onlineTasks;
-    const newTasks = tasks.filter(
-      (item) => item.id !== modalState.deleteTask!.id
-    );
+    const newTasks = [...(task.isOffline ? offlineTasks : onlineTasks)];
+    const index = newTasks.indexOf(task);
+    newTasks.splice(index, 1);
 
     try {
       setLoadingState((prev) => ({ ...prev, delete: true }));
 
-      if (!modalState.deleteTask.isOffline) {
-        await manager.requestUpdate?.(newTasks, [modalState.deleteTask.id]);
+      if (!task.isOffline) {
+        await manager.requestUpdate?.(newTasks, [task.id]);
       } else {
         await manager.offlineTasks.update(newTasks);
       }
-
-      if (modalState.deleteTask.id === modalState.showTask?.id) {
-        setModalState((prev) => ({ ...prev, showTask: null }));
-      }
-      setModalState((prev) => ({ ...prev, deleteTask: null }));
     } catch {
       snackbar({
         text: "Removal failed to save due to collision",
@@ -167,13 +176,7 @@ export default function TasksList() {
     } finally {
       setLoadingState((prev) => ({ ...prev, delete: false }));
     }
-  }, [
-    manager,
-    modalState.deleteTask,
-    modalState.showTask?.id,
-    offlineTasks,
-    onlineTasks,
-  ]);
+  }, [manager, modelTasks.deleteTask, offlineTasks, onlineTasks]);
 
   const dragEndHandler = useCallback(
     async (event: DragEndEvent) => {
@@ -195,31 +198,6 @@ export default function TasksList() {
     [activeTask, updateItem]
   );
 
-  useEffect(() => {
-    if (!manager.boardData.data && !manager.boardData.isLoading) {
-      setModalState({
-        editTask: null,
-        selectedStatus: null,
-        deleteTask: null,
-        showTask: null,
-      });
-    }
-  }, [manager.boardData.data, manager.boardData.isLoading]);
-
-  useEffect(() => {
-    if (
-      (modalState.editTask && modalState.editTask.isOffline !== isOffline) ||
-      (modalState.deleteTask && modalState.deleteTask.isOffline !== isOffline)
-    ) {
-      setModalState((prev) => ({
-        ...prev,
-        editTask: null,
-        selectedStatus: null,
-        deleteTask: null,
-      }));
-    }
-  }, [modalState.editTask, modalState.deleteTask, isOffline]);
-
   return (
     <DndContext
       onDragStart={(event) => setActiveId(event.active.id as string)}
@@ -233,17 +211,17 @@ export default function TasksList() {
               tasks={tasks}
               type={type}
               providerIsReady={!!manager.providerData}
-              onDelete={(task) =>
-                setModalState((prev) => ({ ...prev, deleteTask: task }))
+              onDelete={(id) =>
+                setModalState((prev) => ({ ...prev, deleteTask: id }))
               }
               setStatus={(status) =>
                 setModalState((prev) => ({ ...prev, selectedStatus: status }))
               }
-              onShow={(task) =>
-                setModalState((prev) => ({ ...prev, showTask: task }))
+              onShow={(id) =>
+                setModalState((prev) => ({ ...prev, showTask: id }))
               }
-              setEditTask={(task) =>
-                setModalState((prev) => ({ ...prev, editTask: task }))
+              setEditTask={(id) =>
+                setModalState((prev) => ({ ...prev, editTask: id }))
               }
             />
           );
@@ -258,14 +236,14 @@ export default function TasksList() {
         className="w-[520px]"
       >
         <p className="text-xl font-bold text-center mb-3">
-          {modalState.editTask
+          {modelTasks.editTask
             ? "Update Task"
             : isOffline
             ? "Create New Offline Task"
             : "Create New Task"}
         </p>
         <TaskEditForm
-          editTask={modalState.editTask}
+          editTask={modelTasks.editTask}
           status={modalState.selectedStatus}
           update={updateItem}
           cancelEdit={cancelEdit}
@@ -273,7 +251,7 @@ export default function TasksList() {
         />
       </Modal>
       <Modal
-        isOpen={!!modalState.deleteTask}
+        isOpen={!!modelTasks.deleteTask}
         onClose={() => setModalState((prev) => ({ ...prev, deleteTask: null }))}
         className="w-[520px] grid gap-5"
       >
@@ -300,15 +278,15 @@ export default function TasksList() {
         </div>
       </Modal>
       <Modal
-        isOpen={!!modalState.showTask}
+        isOpen={!!modelTasks.showTask}
         onClose={() => setModalState((prev) => ({ ...prev, showTask: null }))}
         className="w-[600px] grid gap-5"
       >
         <p className="text-xl font-bold break-all">
-          {modalState.showTask?.title}
+          {modelTasks.showTask?.title}
         </p>
         <pre className="text-base font-sans whitespace-pre-wrap break-all">
-          {modalState.showTask?.content}
+          {modelTasks.showTask?.content}
         </pre>{" "}
       </Modal>{" "}
     </DndContext>

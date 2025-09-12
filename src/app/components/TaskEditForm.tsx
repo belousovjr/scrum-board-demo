@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { TaskData, TaskStatus, WithId } from "../lib/types";
 import { v4 as uuidv4 } from "uuid";
 import { Button, ColorPicker, Select, Textfield } from "@belousovjr/uikit";
-import { statuses } from "../lib/constants";
+import { statuses, statusesTitles } from "../lib/constants";
 import randomColor from "randomcolor";
 import { snackbar } from "../lib/utils";
 import useServiceContext from "../lib/helpers/useServiceContext";
@@ -103,7 +103,10 @@ export default function TaskEditForm({
           defaultValue={status || statuses[0]}
           name="status"
           disabled={loading}
-          options={statuses.map((item) => ({ value: item, name: item }))}
+          options={statuses.map((item) => ({
+            value: item,
+            name: statusesTitles[item],
+          }))}
           label="Status"
           className="flex-1"
         />
