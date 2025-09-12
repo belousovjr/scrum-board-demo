@@ -32,11 +32,26 @@ export default class PeerProvider {
   #requestedUpdate: RequestedUpdate | undefined;
 
   constructor(boardData: BoardData, tasksSnapshot: TasksSnapshot) {
-    const newId = genId(boardData.peerId);
-    this.#peer = new Peer(newId);
-    this.#peer.on("open", () => {
+    this.#peer = this.#setupPeer(boardData, tasksSnapshot, boardData.peerId);
+  }
+
+  get isDataConsensus() {
+    if (!this.data) return false;
+    const connIds = [...this.data.connections.values()].map(
+      (item) => item.memberData.snapshotData?.id
+    );
+
+    return connIds.every((id) => id && id === this.data!.tasksSnapshot.id);
+  }
+  #setupPeer(
+    boardData: BoardData,
+    tasksSnapshot: TasksSnapshot,
+    peerId: string
+  ) {
+    const peer = new Peer(peerId);
+    peer.on("open", () => {
       this.#setData({
-        peerId: newId,
+        peerId,
         peerName: boardData.peerName,
         tasksSnapshot,
         lobbyName: boardData.name,
@@ -66,26 +81,25 @@ export default class PeerProvider {
         this.#removeConnections(deadConnectionsIds);
       }, checkHeartbeatMs);
 
-      this.#peer.on("connection", (connection: DataConnection) =>
+      peer.on("connection", (connection: DataConnection) =>
         this.#addConnections([connection])
       );
     });
 
-    this.#peer.on("error", (e) => {
-      const { message } = e as { type: string; message: string };
-      snackbar({ text: message, variant: "error" });
-      // if (type === "unavailable-id" && message.includes("is taken")) {
-      // }
+    peer.on("error", (e) => {
+      const { type, message } = e as { type: string; message: string };
+      if (type === "unavailable-id" && message.includes("is taken")) {
+        this.destroy();
+        this.#peer = this.#setupPeer(
+          boardData,
+          tasksSnapshot,
+          genId(boardData.peerId)
+        );
+      } else {
+        snackbar({ text: message, variant: "error" });
+      }
     });
-  }
-
-  get isDataConsensus() {
-    if (!this.data) return false;
-    const connIds = [...this.data.connections.values()].map(
-      (item) => item.memberData.snapshotData?.id
-    );
-
-    return connIds.every((id) => id && id === this.data!.tasksSnapshot.id);
+    return peer;
   }
   #connectPeers(ids: string[]) {
     const filteredIds = ids.filter(
