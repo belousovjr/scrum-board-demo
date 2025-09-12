@@ -12,7 +12,6 @@ import {
   WithId,
 } from "./types";
 import {
-  checkIsOffline,
   compareIds,
   cutIdBase,
   filterOpenableConnections,
@@ -26,7 +25,13 @@ import { checkHeartbeatMs, lifeTimeMs, reInitHeartbeatMs } from "./constants";
 export default class PeerProvider {
   #peer: Peer;
   data: PeerProviderData | null = null;
-  #callbacks: { [key in PeerProviderEvent]?: (() => void)[] } = {};
+  #callbacks: {
+    [K in keyof PeerProviderEvent]?: ((
+      ...payload: PeerProviderEvent[K] extends undefined
+        ? []
+        : [PeerProviderEvent[K]]
+    ) => void)[];
+  } = {};
   #heartbeatInterval: NodeJS.Timeout | undefined;
   #membersCheckInterval: NodeJS.Timeout | undefined;
   #requestedUpdate: RequestedUpdate | undefined;
@@ -60,17 +65,15 @@ export default class PeerProvider {
       });
 
       if (boardData.peers.length) {
-        this.#connectPeers(boardData.peers);
+        this.connectPeers(boardData.peers);
       }
 
       this.#heartbeatInterval = setInterval(() => {
-        if (!checkIsOffline()) {
-          const { id, timestamp, ids } = this.data!.tasksSnapshot;
-          this.#broadcastMessage({
-            type: "HEARTBEAT",
-            payload: { id, timestamp, ids },
-          });
-        }
+        const { id, timestamp, ids } = this.data!.tasksSnapshot;
+        this.#broadcastMessage({
+          type: "HEARTBEAT",
+          payload: { id, timestamp, ids },
+        });
       }, reInitHeartbeatMs);
 
       this.#membersCheckInterval = setInterval(() => {
@@ -101,7 +104,7 @@ export default class PeerProvider {
     });
     return peer;
   }
-  #connectPeers(ids: string[]) {
+  connectPeers(ids: string[]) {
     const filteredIds = ids.filter(
       (id) => !this.data?.connections.has(cutIdBase(id))
     );
@@ -174,7 +177,10 @@ export default class PeerProvider {
         const { message } = e as { message: string };
         snackbar({ text: message, variant: "error" });
       });
-      conn.on("close", () => this.#removeConnections([id]));
+      conn.on("close", () => {
+        this.#emit("closedPeer", { id });
+        this.#removeConnections([id]);
+      });
       conn.on("data", (data) => {
         const connData = this.data?.connections.get(cutIdBase(id));
         if (!isDataMessage(data) || !this.data || !connData) return;
@@ -209,7 +215,7 @@ export default class PeerProvider {
             );
 
             if (newPeers.length) {
-              this.#connectPeers(newPeers.map((item) => item.id));
+              this.connectPeers(newPeers.map((item) => item.id));
             }
             if (
               data.payload.name &&
@@ -353,16 +359,29 @@ export default class PeerProvider {
     this.#peer.disconnect();
     this.#peer.destroy();
   }
-  on(event: PeerProviderEvent, callback: () => void) {
+  on<T extends keyof PeerProviderEvent>(
+    event: T,
+    callback: (
+      ...payload: PeerProviderEvent[T] extends undefined
+        ? []
+        : [PeerProviderEvent[T]]
+    ) => void
+  ) {
     if (!this.#callbacks[event]) {
       this.#callbacks[event] = [];
     }
     this.#callbacks[event]!.push(callback);
   }
-  #emit(event: PeerProviderEvent) {
-    if (this.#callbacks[event]?.length) {
-      for (const callback of this.#callbacks[event]) {
-        callback();
+  #emit<T extends keyof PeerProviderEvent>(
+    type: T,
+    ...payload: PeerProviderEvent[T] extends undefined
+      ? []
+      : [PeerProviderEvent[T]]
+  ) {
+    const callbacks = this.#callbacks[type];
+    if (callbacks?.length) {
+      for (const callback of callbacks) {
+        callback(...payload);
       }
     }
   }
