@@ -6,7 +6,7 @@ import {
   UsePeerProviderOptions,
   WithId,
 } from "../types";
-import { compareIds, snackbar } from "../utils";
+import { compareIds } from "../utils";
 import useServiceContext from "./useServiceContext";
 
 export default function usePeerProvider({
@@ -14,14 +14,15 @@ export default function usePeerProvider({
   tasksSnapshot,
   onFailedConnection,
 }: UsePeerProviderOptions) {
-  const { isOffline, isPrimaryPage } = useServiceContext();
+  const { isOffline, isPrimaryPage, isVisible } = useServiceContext();
+  const [isConsensus, setIsConsensus] = useState(false);
 
   const providerRef = useRef<PeerProvider | null>(null);
+  const idlePeers = useRef<string[]>([]);
+
   const [providerData, setProviderData] = useState<PeerProviderData | null>(
     null
   );
-
-  const [isConsensus, setIsConsensus] = useState(false);
 
   useEffect(() => {
     if (
@@ -44,8 +45,28 @@ export default function usePeerProvider({
       providerRef.current.on("failedConnection", () => {
         onFailedConnection?.();
       });
+      providerRef.current.on("closedPeer", ({ id }) => {
+        if (!isVisible) {
+          idlePeers.current.push(id);
+        }
+      });
     }
-  }, [boardData, isPrimaryPage, isOffline, onFailedConnection, tasksSnapshot]);
+  }, [
+    boardData,
+    isPrimaryPage,
+    isOffline,
+    onFailedConnection,
+    tasksSnapshot,
+    isVisible,
+  ]);
+
+  useEffect(() => {
+    if (providerRef.current && isVisible && idlePeers.current.length) {
+      providerRef.current.connectPeers(idlePeers.current);
+      idlePeers.current = [];
+    }
+  }, [isVisible]);
+
   return {
     providerData,
     isConsensus,

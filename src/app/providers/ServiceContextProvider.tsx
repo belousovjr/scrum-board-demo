@@ -23,13 +23,15 @@ export const ServiceContext = createContext<{
   isNativeOffline: boolean;
   isDesktop: boolean;
   isTimeValid: boolean;
+  isVisible: boolean;
   setIsOffline?: (value: boolean) => void;
 }>({
   isPrimaryPage: true,
+  isTimeValid: true,
+  isVisible: true,
   isOffline: checkIsNativeOffline(),
   isNativeOffline: checkIsNativeOffline(),
   isDesktop: checkIsDesktop(),
-  isTimeValid: true,
 });
 
 export default function ServiceContextProvider({
@@ -42,6 +44,11 @@ export default function ServiceContextProvider({
 
   const [isNativeOffline, setIsNativeOffline] = useState(checkIsNativeOffline);
   const [isDesktop, setIsDesktop] = useState(checkIsDesktop);
+  const [isVisible, setIsVisible] = useState(() =>
+    typeof window !== "undefined"
+      ? window.document.visibilityState === "visible"
+      : false
+  );
   const isOffline = useAppSelector((store) => store.app.offline);
   const [timeOffset, setTimeOffset] = useState<number | null>(null);
   const lastTimestamp = useRef<number | null>(null);
@@ -115,6 +122,16 @@ export default function ServiceContextProvider({
     };
   }, [syncTime]);
 
+  useEffect(() => {
+    const changeVisHandler = () => {
+      setIsVisible(document.visibilityState === "visible");
+    };
+    document.addEventListener("visibilitychange", changeVisHandler);
+    return () => {
+      document.removeEventListener("visibilitychange", changeVisHandler);
+    };
+  }, []);
+
   return (
     <ServiceContext
       value={{
@@ -123,6 +140,7 @@ export default function ServiceContextProvider({
         isOffline: isOffline || isNativeOffline,
         isDesktop,
         isTimeValid: !timeOffset,
+        isVisible,
         setIsOffline,
       }}
     >

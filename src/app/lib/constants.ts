@@ -15,7 +15,7 @@ export const initialTasksSnapshot: TasksSnapshot = {
   tasks: [],
 };
 
-export const lifeTimeMs = 3000;
+export const lifeTimeMs = 5000;
 export const reInitHeartbeatMs = 2000;
 export const checkHeartbeatMs = 500;
 
