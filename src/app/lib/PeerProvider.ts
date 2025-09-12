@@ -13,7 +13,10 @@ import {
 } from "./types";
 import {
   checkIsOffline,
+  compareIds,
+  cutIdBase,
   filterOpenableConnections,
+  genId,
   getSnapshotData,
   isDataMessage,
   snackbar,
@@ -29,11 +32,11 @@ export default class PeerProvider {
   #requestedUpdate: RequestedUpdate | undefined;
 
   constructor(boardData: BoardData, tasksSnapshot: TasksSnapshot) {
-    this.#peer = new Peer(boardData.peerId);
-
+    const newId = genId(boardData.peerId);
+    this.#peer = new Peer(newId);
     this.#peer.on("open", () => {
       this.#setData({
-        peerId: boardData.peerId,
+        peerId: newId,
         peerName: boardData.peerName,
         tasksSnapshot,
         lobbyName: boardData.name,
@@ -42,7 +45,7 @@ export default class PeerProvider {
       });
 
       if (boardData.peers.length) {
-        this.connectPeers(boardData.peers);
+        this.#connectPeers(boardData.peers);
       }
 
       this.#heartbeatInterval = setInterval(() => {
@@ -59,7 +62,7 @@ export default class PeerProvider {
         const nowMs = Date.now();
         const deadConnectionsIds = [...this.data!.connections.values()]
           .filter((connData) => nowMs - connData.lastHeartbeat >= lifeTimeMs)
-          .map((item) => item.memberData.id);
+          .map((item) => cutIdBase(item.memberData.id));
         this.#removeConnections(deadConnectionsIds);
       }, checkHeartbeatMs);
 
@@ -69,11 +72,10 @@ export default class PeerProvider {
     });
 
     this.#peer.on("error", (e) => {
-      const { type, message } = e as { type: string; message: string };
+      const { message } = e as { type: string; message: string };
       snackbar({ text: message, variant: "error" });
-      if (type === "unavailable-id" && message.includes("is taken")) {
-        this.#emit("failedTab");
-      }
+      // if (type === "unavailable-id" && message.includes("is taken")) {
+      // }
     });
   }
 
@@ -85,17 +87,15 @@ export default class PeerProvider {
 
     return connIds.every((id) => id && id === this.data!.tasksSnapshot.id);
   }
-  connectPeers(ids: string[]) {
-    const filteredIds = ids.filter((id) => !this.data?.connections.has(id));
+  #connectPeers(ids: string[]) {
+    const filteredIds = ids.filter(
+      (id) => !this.data?.connections.has(cutIdBase(id))
+    );
     if (filteredIds.length) {
       this.#addConnections(filteredIds.map((id) => this.#peer.connect(id)));
     }
   }
-  disconnectAll() {
-    for (const [, conn] of this.data?.connections || []) {
-      conn.connection.close();
-    }
-  }
+
   requestUpdate(newList: WithId<TaskData>[], ids: string[]) {
     if (this.#requestedUpdate) throw Error("Requested update already exists");
 
@@ -129,10 +129,10 @@ export default class PeerProvider {
     const { connections, memberNames } = this.data;
     let updated = false;
     for (const id of ids) {
-      if (connections.delete(id)) {
+      if (connections.delete(cutIdBase(id))) {
         updated = true;
+        memberNames.delete(cutIdBase(id));
       }
-      memberNames.delete(id);
     }
     if (updated)
       this.#setData({
@@ -162,26 +162,26 @@ export default class PeerProvider {
       });
       conn.on("close", () => this.#removeConnections([id]));
       conn.on("data", (data) => {
-        const connData = this.data?.connections.get(id);
+        const connData = this.data?.connections.get(cutIdBase(id));
         if (!isDataMessage(data) || !this.data || !connData) return;
         switch (data.type) {
           case "NAMES_UPDATED":
-            const updatedNames: [string, string][] = [];
+            let updated = false;
             for (const [memberId, memberName] of data.payload) {
               if (
-                memberId !== this.data.peerId &&
+                !compareIds(memberId, this.data.peerId) &&
                 this.data.memberNames.get(memberId) !== memberName
               ) {
-                updatedNames.push([memberId, memberName]);
+                updated = true;
                 memberNames.set(memberId, memberName);
               }
             }
-            if (updatedNames.length) {
+            if (updated) {
               this.#setData({ memberNames: new Map(memberNames) });
               this.#broadcastMessage({
                 type: "NAMES_UPDATED",
                 payload: [
-                  [this.data.peerId, this.data.peerName],
+                  [cutIdBase(this.data.peerId), this.data.peerName],
                   ...memberNames,
                 ],
               });
@@ -190,12 +190,12 @@ export default class PeerProvider {
           case "LOBBY_UPDATED":
             const newPeers = data.payload.membersData.filter(
               (item) =>
-                !this.data!.connections.has(item.id) &&
-                item.id !== this.data!.peerId
+                !this.data!.connections.has(cutIdBase(item.id)) &&
+                !compareIds(item.id, this.data!.peerId)
             );
 
             if (newPeers.length) {
-              this.connectPeers(newPeers.map((item) => item.id));
+              this.#connectPeers(newPeers.map((item) => item.id));
             }
             if (
               data.payload.name &&
@@ -246,7 +246,7 @@ export default class PeerProvider {
             break;
         }
       });
-      updatedConns.set(id, {
+      updatedConns.set(cutIdBase(id), {
         connection: conn,
         memberData: { id },
         lastHeartbeat: Date.now(),
@@ -268,7 +268,7 @@ export default class PeerProvider {
       {
         type: "NAMES_UPDATED",
         payload: [
-          [this.data.peerId, this.data.peerName],
+          [cutIdBase(this.data.peerId), this.data.peerName],
           ...(this.data.memberNames ?? []),
         ],
       },
@@ -322,7 +322,7 @@ export default class PeerProvider {
     ids = Array.from(this.data!.connections).map(([id]) => id)
   ) {
     for (const id of ids) {
-      const connectionData = this.data!.connections.get(id)!;
+      const connectionData = this.data!.connections.get(cutIdBase(id))!;
       connectionData.connection.send(message);
     }
   }

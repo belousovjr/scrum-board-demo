@@ -9,12 +9,11 @@ import {
 } from "react";
 import { BoardManager } from "../lib/types";
 import { useDB } from "../lib/helpers/useDB";
-import { useOffline } from "../lib/helpers/useOffline";
 import { usePathname, useRouter } from "next/navigation";
 import { initialTasksSnapshot } from "../lib/constants";
 import usePeerProvider from "../lib/helpers/usePeerProvider";
-import { v4 as uuidv4 } from "uuid";
-import { snackbar } from "../lib/utils";
+import { compareIds, genId, snackbar } from "../lib/utils";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 export const BoardContext = createContext<BoardManager | null>(null);
 
@@ -26,11 +25,10 @@ export default function BoardContextProvider({
   const boardData = useDB("boardData");
   const offlineTasks = useDB("offlineTasks");
   const onlineTasksSnapshot = useDB("onlineTasksSnapshot");
-  const offlineMode = useOffline();
+  const { isOffline } = useServiceContext();
   const router = useRouter();
-  const pathName = usePathname();
+  const pathname = usePathname();
   const [refId, setRefId] = useState<string | undefined>();
-  const [tabError, setTabError] = useState(false);
 
   const prepTasksSnapshot = useMemo(
     () =>
@@ -53,9 +51,6 @@ export default function BoardContextProvider({
     boardData: boardData.data,
     tasksSnapshot: prepTasksSnapshot,
     onFailedConnection: removeBoardData,
-    onFailedTab: () => {
-      setTabError(true);
-    },
   });
 
   const membersNamesIsLoading = useMemo(
@@ -75,7 +70,7 @@ export default function BoardContextProvider({
         onlineTasksSnapshot.isLoading ||
         membersNamesIsLoading ||
         (providerData && !onlineTasksSnapshot.data) ||
-        (boardData.data && !offlineMode.value && !providerData) ||
+        (boardData.data && !isOffline && !providerData) ||
         refId
       ),
     [
@@ -85,7 +80,7 @@ export default function BoardContextProvider({
       onlineTasksSnapshot.data,
       membersNamesIsLoading,
       providerData,
-      offlineMode.value,
+      isOffline,
       refId,
     ]
   );
@@ -95,7 +90,7 @@ export default function BoardContextProvider({
       await removeBoardData();
       await boardData.update({
         name: null,
-        peerId: uuidv4(),
+        peerId: genId(),
         peerName,
         peers: [id],
         memberNames: [],
@@ -106,7 +101,7 @@ export default function BoardContextProvider({
 
   const syncOfflineTasks = useCallback(async () => {
     if (
-      offlineMode.value ||
+      isOffline ||
       onlineTasksSnapshot.isLoading ||
       offlineTasks.isLoading ||
       !onlineTasksSnapshot.data ||
@@ -143,7 +138,7 @@ export default function BoardContextProvider({
       snackbar({ text: String(e), variant: "error" });
     }
   }, [
-    offlineMode.value,
+    isOffline,
     offlineTasks,
     onlineTasksSnapshot,
     providerData,
@@ -155,19 +150,20 @@ export default function BoardContextProvider({
     const refIdParam = params.get("inv");
     if (refIdParam) {
       setRefId(refIdParam);
-      router.replace(pathName, { scroll: false });
+      console.log("REPLACE");
+      router.replace(pathname, { scroll: false });
     }
-  }, [pathName, router]);
+  }, [pathname, router]);
 
   useEffect(() => {
     if (
       providerData &&
-      boardData.data?.peerId === providerData.peerId &&
-      !boardData.isLoading &&
-      !offlineMode.value
+      boardData.data &&
+      compareIds(boardData.data?.peerId, providerData.peerId) &&
+      !boardData.isLoading
     ) {
-      const providerPeersIds = Array.from(providerData?.connections)
-        .map(([id]) => id)
+      const providerPeersIds = [...providerData.connections.values()]
+        .map((con) => con.connection.peer)
         .toSorted();
       const boardPeersIds = boardData.data.peers.toSorted();
       const providerMemberNames = [...providerData.memberNames];
@@ -187,39 +183,32 @@ export default function BoardContextProvider({
         });
       }
     }
-  }, [boardData, offlineMode.value, providerData]);
+  }, [boardData, providerData]);
 
   useEffect(() => {
     if (
       providerData &&
-      boardData.data?.peerId === providerData.peerId &&
+      boardData.data &&
+      compareIds(boardData.data.peerId, providerData.peerId) &&
       !onlineTasksSnapshot.isLoading &&
       providerData.tasksSnapshot.id !== onlineTasksSnapshot.data?.id &&
-      isConsensus &&
-      !offlineMode.value
+      isConsensus
     ) {
       onlineTasksSnapshot.update(providerData.tasksSnapshot);
     }
-  }, [
-    boardData.data?.peerId,
-    isConsensus,
-    offlineMode.value,
-    onlineTasksSnapshot,
-    providerData,
-  ]);
+  }, [boardData.data, isConsensus, onlineTasksSnapshot, providerData]);
 
   const isRefExcess = useMemo(
     () =>
       refId &&
-      (boardData.data?.peers.includes(refId) ||
-        boardData.data?.peerId === refId),
+      (boardData.data?.peers.some((id) => compareIds(id, refId)) ||
+        (boardData.data && compareIds(boardData.data.peerId, refId))),
     [boardData, refId]
   );
 
   const refOffer = useMemo(
-    () =>
-      !!(refId && !isRefExcess && !offlineMode.value && !boardData.isLoading),
-    [boardData.isLoading, isRefExcess, offlineMode.value, refId]
+    () => !!(refId && !isRefExcess && !isOffline && !boardData.isLoading),
+    [boardData.isLoading, isRefExcess, isOffline, refId]
   );
 
   const refAnswer = useCallback(
@@ -234,10 +223,10 @@ export default function BoardContextProvider({
   );
 
   useEffect(() => {
-    if (isRefExcess || offlineMode.value) {
+    if (isRefExcess || isOffline) {
       setRefId(undefined);
     }
-  }, [isRefExcess, offlineMode.value, refAnswer]);
+  }, [isRefExcess, isOffline, refAnswer]);
 
   return (
     <BoardContext
@@ -247,7 +236,6 @@ export default function BoardContextProvider({
         onlineTasksSnapshot,
         providerData,
         isLoading,
-        tabError,
         refOffer,
         refAnswer,
         removeBoardData,
