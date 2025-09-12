@@ -27,10 +27,7 @@ export interface BoardData {
 
 export type WithId<T extends object> = T & { id: string };
 
-export type PeerProviderEvent =
-  | "updatedData"
-  | "failedConnection"
-  | "failedTab";
+export type PeerProviderEvent = "updatedData" | "failedConnection";
 
 export interface BoardMemberData {
   id: string;
@@ -104,7 +101,6 @@ export interface UsePeerProviderOptions {
   boardData: BoardData | null;
   tasksSnapshot: TasksSnapshot | null;
   onFailedConnection?: () => void;
-  onFailedTab?: () => void;
 }
 
 export interface ScrumBoardDBSchemaRaw {
@@ -131,7 +127,6 @@ export interface BoardManager {
     typeof useDB<"onlineTasksSnapshot", TasksSnapshot>
   >;
   providerData: PeerProviderData | null;
-  tabError: boolean;
   isLoading: boolean;
   refOffer: boolean;
   refAnswer: (createWithPeerName: string | false) => Promise<void>;
@@ -154,3 +149,12 @@ export interface SnackbarData {
   variant?: ComponentProps<typeof Notification>["variant"];
   id: string;
 }
+
+export type BChannelEvent =
+  | {
+      type: "hello";
+      sender: string;
+    }
+  | {
+      type: "exists";
+    };

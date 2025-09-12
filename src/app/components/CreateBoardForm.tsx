@@ -1,20 +1,23 @@
-import { v4 as uuidv4 } from "uuid";
 import { BoardData } from "../lib/types";
 import { Button, Textfield } from "@belousovjr/uikit";
-import { KanbanIcon, PlusIcon, UserIcon } from "lucide-react";
+import { KanbanIcon, PlusIcon } from "lucide-react";
+import { genId } from "../lib/utils";
+import { MemberAvatar } from "./MemberAvatar";
+import { useState } from "react";
 
 export default function CreateBoardForm({
   create,
 }: {
   create: (data: BoardData) => unknown;
 }) {
+  const [peerName, setPeerName] = useState("");
   return (
     <form
       className="grid gap-6 p-7 2xl:px-12 shadow-lg rounded-md"
       action={(data) => {
         const newBoardData = {
           ...Object.fromEntries(data),
-          peerId: uuidv4(),
+          peerId: genId(),
           peers: [],
           memberNames: [],
         } as object as BoardData;
@@ -275,7 +278,11 @@ export default function CreateBoardForm({
         required
         minLength={4}
         placeholder="Peer Name"
-        rightIcon={<UserIcon />}
+        value={peerName}
+        rightIcon={
+          peerName ? <MemberAvatar id={peerName} className="w-6" /> : undefined
+        }
+        onChange={(e) => setPeerName(e.target.value)}
       />
       <Button className="mx-auto" icon={<PlusIcon />}>
         Create Board

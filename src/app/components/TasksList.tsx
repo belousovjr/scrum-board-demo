@@ -13,22 +13,19 @@ import {
   WithId,
 } from "../lib/types";
 import TaskItem from "./TaskItem";
-import useIsDesktop from "../lib/helpers/useIsDesktop";
 import { DndContext, DragEndEvent, DragOverlay } from "@dnd-kit/core";
 import { Button, Modal } from "@belousovjr/uikit";
 import TaskEditForm from "./TaskEditForm";
 import TasksListByType from "./TasksListSection";
-import { useOffline } from "../lib/helpers/useOffline";
 import useBoardManager from "../lib/helpers/useBoardManager ";
 import { snackbar } from "../lib/utils";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 export default function TasksList() {
   const manager = useBoardManager();
 
-  const isDesktop = useIsDesktop();
+  const { isDesktop, isOffline } = useServiceContext();
   const defIsDesktop = useDeferredValue(isDesktop);
-  const offlineMode = useOffline();
-  const defIsOffline = useDeferredValue(offlineMode.value);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [updatedTask, setUpdatedTask] = useState<WithId<TaskData> | null>(null);
@@ -211,9 +208,8 @@ export default function TasksList() {
 
   useEffect(() => {
     if (
-      (modalState.editTask && modalState.editTask.isOffline !== defIsOffline) ||
-      (modalState.deleteTask &&
-        modalState.deleteTask.isOffline !== defIsOffline)
+      (modalState.editTask && modalState.editTask.isOffline !== isOffline) ||
+      (modalState.deleteTask && modalState.deleteTask.isOffline !== isOffline)
     ) {
       setModalState((prev) => ({
         ...prev,
@@ -222,7 +218,7 @@ export default function TasksList() {
         deleteTask: null,
       }));
     }
-  }, [modalState.editTask, modalState.deleteTask, defIsOffline]);
+  }, [modalState.editTask, modalState.deleteTask, isOffline]);
 
   return (
     <DndContext
@@ -236,7 +232,6 @@ export default function TasksList() {
               key={type}
               tasks={tasks}
               type={type}
-              isOffline={defIsOffline}
               providerIsReady={!!manager.providerData}
               onDelete={(task) =>
                 setModalState((prev) => ({ ...prev, deleteTask: task }))
@@ -265,7 +260,7 @@ export default function TasksList() {
         <p className="text-xl font-bold text-center mb-3">
           {modalState.editTask
             ? "Update Task"
-            : defIsOffline
+            : isOffline
             ? "Create New Offline Task"
             : "Create New Task"}
         </p>

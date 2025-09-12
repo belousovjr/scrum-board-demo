@@ -1,15 +1,15 @@
 "use client";
 import { WifiIcon, WifiOffIcon } from "lucide-react";
 import { Toggle } from "@belousovjr/uikit";
-import { useOffline } from "../lib/helpers/useOffline";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 export default function OfflineToggle() {
-  const { value, setValue, nativeValue } = useOffline();
+  const { isOffline, isNativeOffline, setIsOffline } = useServiceContext();
   return (
     <Toggle
-      active={value}
-      onChange={setValue}
-      disabled={nativeValue}
+      active={isOffline}
+      onChange={setIsOffline}
+      disabled={isNativeOffline}
       className="bg-green-100 has-checked:bg-red-100 group-hover/toggle-wrap:bg-green-90"
       circleElement={
         <span className="relative">

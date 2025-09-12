@@ -5,11 +5,11 @@ import { useMemo } from "react";
 import { Button } from "@belousovjr/uikit";
 import { PlusIcon } from "lucide-react";
 import { statusesTitles } from "../lib/constants";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 export default function TasksListSection({
   tasks,
   type,
-  isOffline,
   providerIsReady,
   onDelete,
   setStatus,
@@ -18,18 +18,23 @@ export default function TasksListSection({
 }: {
   tasks: WithId<TaskData>[];
   type: TaskType;
-  isOffline?: boolean;
   providerIsReady: boolean;
   onDelete: (task: WithId<TaskData>) => unknown;
   setStatus: (task: TaskStatus) => unknown;
   onShow: (task: WithId<TaskData>) => unknown;
   setEditTask: (task: WithId<TaskData>) => unknown;
 }) {
+  const { isOffline } = useServiceContext();
   const { isOver, setNodeRef } = useDroppable({
     id: type,
   });
   const isOverEffect = useMemo(() => isOver, [isOver]);
   const isMobile = type === "MOBILE";
+
+  const disabled = useMemo(
+    () => !isOffline && !providerIsReady,
+    [isOffline, providerIsReady]
+  );
 
   return (
     <div ref={setNodeRef} className="flex flex-col gap-y-4">
@@ -47,6 +52,7 @@ export default function TasksListSection({
         variant="white"
         icon={<PlusIcon />}
         size="sm"
+        disabled={disabled}
         onClick={() => {
           setStatus(!isMobile ? type : "TODO");
         }}
@@ -68,7 +74,7 @@ export default function TasksListSection({
             onShow={() => {
               onShow(item);
             }}
-            disabled={!providerIsReady && !item.isOffline}
+            disabled={disabled}
             hideActions={isOffline === !item.isOffline}
           />
         ))}
