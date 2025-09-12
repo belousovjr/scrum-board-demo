@@ -150,7 +150,6 @@ export default function BoardContextProvider({
     const refIdParam = params.get("inv");
     if (refIdParam) {
       setRefId(refIdParam);
-      console.log("REPLACE");
       router.replace(pathname, { scroll: false });
     }
   }, [pathname, router]);

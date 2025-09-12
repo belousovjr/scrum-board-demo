@@ -120,7 +120,7 @@ export default function ServiceContextProvider({
       value={{
         isPrimaryPage: isPrimary,
         isNativeOffline,
-        isOffline,
+        isOffline: isOffline || isNativeOffline,
         isDesktop,
         isTimeValid: !timeOffset,
         setIsOffline,
