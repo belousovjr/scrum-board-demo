@@ -26,11 +26,7 @@ export default class PeerProvider {
   #peer: Peer;
   data: PeerProviderData | null = null;
   #callbacks: {
-    [K in keyof PeerProviderEvent]?: ((
-      ...payload: PeerProviderEvent[K] extends undefined
-        ? []
-        : [PeerProviderEvent[K]]
-    ) => void)[];
+    [K in PeerProviderEvent]?: (() => void)[];
   } = {};
   #heartbeatInterval: NodeJS.Timeout | undefined;
   #membersCheckInterval: NodeJS.Timeout | undefined;
@@ -65,7 +61,7 @@ export default class PeerProvider {
       });
 
       if (boardData.peers.length) {
-        this.connectPeers(boardData.peers);
+        this.#connectPeers(boardData.peers);
       }
 
       this.#heartbeatInterval = setInterval(() => {
@@ -84,9 +80,9 @@ export default class PeerProvider {
         this.#removeConnections(deadConnectionsIds);
       }, checkHeartbeatMs);
 
-      peer.on("connection", (connection: DataConnection) =>
-        this.#addConnections([connection])
-      );
+      peer.on("connection", (connection: DataConnection) => {
+        this.#addConnections([connection]);
+      });
     });
 
     peer.on("error", (e) => {
@@ -98,13 +94,13 @@ export default class PeerProvider {
           tasksSnapshot,
           genId(boardData.peerId)
         );
-      } else {
+      } else if (type !== "peer-unavailable") {
         snackbar({ text: message, variant: "error" });
       }
     });
     return peer;
   }
-  connectPeers(ids: string[]) {
+  #connectPeers(ids: string[]) {
     const filteredIds = ids.filter(
       (id) => !this.data?.connections.has(cutIdBase(id))
     );
@@ -157,9 +153,18 @@ export default class PeerProvider {
         memberNames: new Map(memberNames),
       });
   }
-  async #addConnections(connections: DataConnection[]) {
-    const newConns = await filterOpenableConnections(connections, this.#peer);
+  async #addConnections(connections: DataConnection[], isSecondTry = false) {
+    const newConns = await filterOpenableConnections(
+      connections,
+      this.#peer,
+      !isSecondTry
+    );
 
+    if (!newConns.length && isSecondTry) {
+      this.#removeConnections(connections.map((con) => con.peer));
+
+      return;
+    }
     if (!newConns.length || !this.data) {
       if (!this.data?.connections.size && this.data?.lobbyName === null) {
         //connect by inv failed
@@ -178,8 +183,12 @@ export default class PeerProvider {
         snackbar({ text: message, variant: "error" });
       });
       conn.on("close", () => {
-        this.#emit("closedPeer", { id });
-        this.#removeConnections([id]);
+        if (this.#peer.open) {
+          const retryConn = this.#peer.connect(id);
+
+          this.#removeConnections([id]);
+          this.#addConnections([retryConn], true);
+        }
       });
       conn.on("data", (data) => {
         const connData = this.data?.connections.get(cutIdBase(id));
@@ -215,7 +224,7 @@ export default class PeerProvider {
             );
 
             if (newPeers.length) {
-              this.connectPeers(newPeers.map((item) => item.id));
+              this.#connectPeers(newPeers.map((item) => item.id));
             }
             if (
               data.payload.name &&
@@ -359,29 +368,17 @@ export default class PeerProvider {
     this.#peer.disconnect();
     this.#peer.destroy();
   }
-  on<T extends keyof PeerProviderEvent>(
-    event: T,
-    callback: (
-      ...payload: PeerProviderEvent[T] extends undefined
-        ? []
-        : [PeerProviderEvent[T]]
-    ) => void
-  ) {
+  on(event: PeerProviderEvent, callback: () => void) {
     if (!this.#callbacks[event]) {
       this.#callbacks[event] = [];
     }
     this.#callbacks[event]!.push(callback);
   }
-  #emit<T extends keyof PeerProviderEvent>(
-    type: T,
-    ...payload: PeerProviderEvent[T] extends undefined
-      ? []
-      : [PeerProviderEvent[T]]
-  ) {
+  #emit(type: PeerProviderEvent) {
     const callbacks = this.#callbacks[type];
     if (callbacks?.length) {
       for (const callback of callbacks) {
-        callback(...payload);
+        callback();
       }
     }
   }

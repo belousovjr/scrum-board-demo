@@ -14,11 +14,10 @@ export default function usePeerProvider({
   tasksSnapshot,
   onFailedConnection,
 }: UsePeerProviderOptions) {
-  const { isOffline, isPrimaryPage, isVisible } = useServiceContext();
+  const { isOffline, isPrimaryPage } = useServiceContext();
   const [isConsensus, setIsConsensus] = useState(false);
 
   const providerRef = useRef<PeerProvider | null>(null);
-  const idlePeers = useRef<string[]>([]);
 
   const [providerData, setProviderData] = useState<PeerProviderData | null>(
     null
@@ -45,27 +44,8 @@ export default function usePeerProvider({
       providerRef.current.on("failedConnection", () => {
         onFailedConnection?.();
       });
-      providerRef.current.on("closedPeer", ({ id }) => {
-        if (!isVisible) {
-          idlePeers.current.push(id);
-        }
-      });
     }
-  }, [
-    boardData,
-    isPrimaryPage,
-    isOffline,
-    onFailedConnection,
-    tasksSnapshot,
-    isVisible,
-  ]);
-
-  useEffect(() => {
-    if (providerRef.current && isVisible && idlePeers.current.length) {
-      providerRef.current.connectPeers(idlePeers.current);
-      idlePeers.current = [];
-    }
-  }, [isVisible]);
+  }, [boardData, isPrimaryPage, isOffline, onFailedConnection, tasksSnapshot]);
 
   return {
     providerData,

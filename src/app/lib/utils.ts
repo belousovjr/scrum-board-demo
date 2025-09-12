@@ -17,28 +17,34 @@ export function isDataMessage(data: unknown): data is DataMessage {
 
 export async function filterOpenableConnections(
   connections: DataConnection[],
-  peer: Peer
+  peer: Peer,
+  withNotification: boolean
 ) {
   const results = await Promise.allSettled(
     connections.map(
       (item) =>
         new Promise((resolve, reject) => {
           const connectErrorHandler = (e: unknown) => {
+            peer.off("error", connectErrorHandler);
+            item.off("open", openHandler);
             const { type, message } = e as { type: string; message: string };
-            snackbar({ text: message, variant: "error" });
 
-            if (type === "peer-unavailable") {
-              const id = message.slice("Could not connect to peer ".length);
-              if (id === item.peer) {
-                peer.off("error", connectErrorHandler);
+            if (message.includes(item.peer)) {
+              if (withNotification) {
+                snackbar({ text: message, variant: "error" });
+              }
+              if (type === "peer-unavailable") {
                 reject();
               }
             }
           };
-          peer.on("error", connectErrorHandler);
-          item.on("open", () => {
+          const openHandler = () => {
+            peer.off("error", connectErrorHandler);
+            item.off("open", openHandler);
             resolve(item);
-          });
+          };
+          peer.on("error", connectErrorHandler);
+          item.on("open", openHandler);
         })
     )
   );
