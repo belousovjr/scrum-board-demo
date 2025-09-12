@@ -52,7 +52,10 @@ export default function BoardContextProvider({
   const { providerData, requestUpdate, isConsensus } = usePeerProvider({
     boardData: boardData.data,
     tasksSnapshot: prepTasksSnapshot,
-    onFailedConnection: removeBoardData,
+    onFailedConnection: () => {
+      snackbar({ text: "Failed to connect via invite", variant: "error" });
+      removeBoardData();
+    },
   });
 
   const membersNamesIsLoading = useMemo(
