@@ -13,10 +13,10 @@ import { MemberAvatar } from "./MemberAvatar";
 import { Button, Modal } from "@belousovjr/uikit";
 import { useShortenLink } from "../lib/helpers/useShortenLink";
 import { QRCodeSVG } from "qrcode.react";
-import { useOffline } from "../lib/helpers/useOffline";
 import DebouncedLoader from "./DebouncedLoader";
 import useBoardManager from "../lib/helpers/useBoardManager ";
 import { snackbar } from "../lib/utils";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 export default function Header({
   onCloseBoard,
@@ -25,8 +25,8 @@ export default function Header({
 }) {
   const manager = useBoardManager();
 
-  const offlineMode = useOffline();
-  const defIsOffline = useDeferredValue(offlineMode.value);
+  const { isOffline } = useServiceContext();
+  const defIsOffline = useDeferredValue(isOffline);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -91,7 +91,7 @@ export default function Header({
                   {namedMembers
                     .slice(0, namedMembers.length > 2 ? 1 : 2)
                     .map(([id, name]) => (
-                      <MemberAvatar key={id} id={id} title={name} />
+                      <MemberAvatar key={id} id={name} title={name} />
                     ))}
                   {namedMembers.length > 2 && (
                     <div
@@ -195,7 +195,7 @@ export default function Header({
         <div className="grid gap-4 content-start min-w-[400px] min-h-[200px]">
           {namedMembers.map(([id, name]) => (
             <div key={id} className="flex items-center gap-4 font-medium">
-              <MemberAvatar className="w-8" key={id} id={id} />
+              <MemberAvatar className="w-6" key={id} id={name} />
               <span>{name}</span>
             </div>
           ))}

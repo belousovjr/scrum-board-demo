@@ -12,13 +12,13 @@ const TasksList = dynamic(() => import("./TasksList"));
 const Snackbar = dynamic(() => import("./Snackbar"));
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
-import useLocalTimeValid from "../lib/helpers/useLocalTimeValid";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 TimeAgo.addDefaultLocale(en);
 
 export default function TasksManager() {
   const manager = useBoardManager();
-  const isTimeValid = useLocalTimeValid();
+  const { isPrimaryPage, isTimeValid } = useServiceContext();
   const [modalState, setModalState] = useState({
     showClose: false,
   });
@@ -82,13 +82,25 @@ export default function TasksManager() {
       {!!manager && (
         <>
           <Modal
-            isOpen={manager.tabError}
+            isOpen={!isPrimaryPage}
             className="w-[520px] bg-red-100 text-white grid gap-5"
           >
             <p className="text-xl font-bold">
               The application is open in another tab
             </p>
-            <div className="font-sans">Please return to the active tab.</div>
+            <div className="font-sans">Please close the rest of the pages.</div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  window.location.reload();
+                }}
+                loading={loadingState.close}
+                autoFocus
+              >
+                Reload Page
+              </Button>
+            </div>
           </Modal>
           <Modal
             isOpen={manager.refOffer}

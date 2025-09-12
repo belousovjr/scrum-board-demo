@@ -6,16 +6,15 @@ import {
   UsePeerProviderOptions,
   WithId,
 } from "../types";
-import { snackbar } from "../utils";
-import { useOffline } from "./useOffline";
+import { compareIds, snackbar } from "../utils";
+import useServiceContext from "./useServiceContext";
 
 export default function usePeerProvider({
   boardData,
   tasksSnapshot,
   onFailedConnection,
-  onFailedTab,
 }: UsePeerProviderOptions) {
-  const offlineMode = useOffline();
+  const { isOffline, isPrimaryPage } = useServiceContext();
 
   const providerRef = useRef<PeerProvider | null>(null);
   const [providerData, setProviderData] = useState<PeerProviderData | null>(
@@ -25,34 +24,16 @@ export default function usePeerProvider({
   const [isConsensus, setIsConsensus] = useState(false);
 
   useEffect(() => {
-    //sync members for custom offline mode
-    if (
-      providerRef.current?.data &&
-      providerRef.current.data.peerId === boardData?.peerId
-    ) {
-      if (offlineMode.value) {
-        providerRef.current.disconnectAll();
-      } else if (
-        boardData.peers.length &&
-        !providerRef.current.data.connections.size
-      ) {
-        providerRef.current.connectPeers(boardData.peers);
-      }
-    }
-  }, [boardData, offlineMode.value]);
-
-  useEffect(() => {
     if (
       !boardData ||
       (providerRef.current?.data &&
-        boardData.peerId !== providerRef.current.data.peerId)
+        !compareIds(boardData.peerId, providerRef.current.data.peerId)) ||
+      isOffline
     ) {
       providerRef.current?.destroy();
       providerRef.current = null;
       setIsConsensus(false);
-      return;
-    }
-    if (tasksSnapshot && !providerRef.current && !offlineMode.value) {
+    } else if (tasksSnapshot && !providerRef.current && isPrimaryPage) {
       providerRef.current = new PeerProvider(boardData, tasksSnapshot);
       providerRef.current.on("updatedData", () => {
         setProviderData(
@@ -67,17 +48,8 @@ export default function usePeerProvider({
         });
         onFailedConnection?.();
       });
-      providerRef.current.on("failedTab", () => {
-        onFailedTab?.();
-      });
     }
-  }, [
-    boardData,
-    offlineMode.value,
-    onFailedConnection,
-    onFailedTab,
-    tasksSnapshot,
-  ]);
+  }, [boardData, isPrimaryPage, isOffline, onFailedConnection, tasksSnapshot]);
   return {
     providerData,
     isConsensus,

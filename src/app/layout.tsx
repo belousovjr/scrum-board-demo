@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Red_Hat_Mono } from "next/font/google";
 import "./globals.css";
-import OfflineContextProvider from "./providers/OfflineContextProvider";
 import BoardContextProvider from "./providers/BoardContextProvider";
 import ReduxProvider from "./providers/ReduxProvider";
-import { store } from "./store/store";
+import ServiceContextProvider from "./providers/ServiceContextProvider";
 
 const interSans = Inter({
   variable: "--font-inter-sans",
@@ -67,9 +66,9 @@ export default function RootLayout({
         className={`${interSans.variable} ${redhatMono.variable} antialiased`}
       >
         <ReduxProvider>
-          <OfflineContextProvider>
+          <ServiceContextProvider>
             <BoardContextProvider>{children}</BoardContextProvider>
-          </OfflineContextProvider>
+          </ServiceContextProvider>
         </ReduxProvider>
       </body>
     </html>

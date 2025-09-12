@@ -5,9 +5,9 @@ import { TaskData, TaskStatus, WithId } from "../lib/types";
 import { v4 as uuidv4 } from "uuid";
 import { Button, ColorPicker, Select, Textfield } from "@belousovjr/uikit";
 import { statuses } from "../lib/constants";
-import { useOffline } from "../lib/helpers/useOffline";
 import randomColor from "randomcolor";
 import { snackbar } from "../lib/utils";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 interface TaskEditFormProps {
   editTask?: WithId<TaskData> | null;
@@ -29,7 +29,7 @@ export default function TaskEditForm({
   const [editLoading, setEditLoading] = useState(false);
   const [color, setColor] = useState<string>();
 
-  const offlineMode = useOffline();
+  const { isOffline } = useServiceContext();
 
   const edit = useCallback(
     async (data: FormData) => {
@@ -43,7 +43,7 @@ export default function TaskEditForm({
 
       try {
         setEditLoading(true);
-        await update({ ...newItem, isOffline: offlineMode.value });
+        await update({ ...newItem, isOffline });
       } catch (e) {
         snackbar({ text: String(e), variant: "error" });
       } finally {
@@ -51,7 +51,7 @@ export default function TaskEditForm({
         cancelEdit();
       }
     },
-    [cancelEdit, editTask, offlineMode.value, update]
+    [cancelEdit, editTask, isOffline, update]
   );
 
   useEffect(() => {

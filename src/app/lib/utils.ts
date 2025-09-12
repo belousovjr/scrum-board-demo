@@ -82,3 +82,19 @@ export async function getCurrentTimeOffset() {
   const diff = (remoteTime - start + requestDiff) / 2;
   return Math.round(diff / (1000 * 60));
 }
+
+export function cutIdBase(id: string) {
+  return id.slice(0, 24 - 1);
+}
+
+export function genId(baseId?: string) {
+  const id = uuidv4();
+  if (baseId) {
+    return `${cutIdBase(baseId)}-${id.slice(-12)}`;
+  }
+  return id;
+}
+
+export function compareIds(a: string, b: string) {
+  return cutIdBase(a) === cutIdBase(b);
+}
