@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import {
   ModalState,
   TaskData,
@@ -17,14 +11,13 @@ import { DndContext, DragEndEvent, DragOverlay } from "@dnd-kit/core";
 import { Button, Modal } from "@belousovjr/uikit";
 import TaskEditForm from "./TaskEditForm";
 import TasksListByType from "./TasksListSection";
-import useBoardManager from "../lib/helpers/useBoardManager ";
-import { snackbar } from "../lib/utils";
+import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
 
 export default function TasksList() {
   const manager = useBoardManager();
 
-  const { isDesktop, isOffline } = useServiceContext();
+  const { isDesktop, isOffline, setNotification } = useServiceContext();
   const defIsDesktop = useDeferredValue(isDesktop);
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -143,13 +136,13 @@ export default function TasksList() {
           await manager.offlineTasks.update(newTasks);
         }
       } catch {
-        snackbar({
+        setNotification?.({
           text: "Editing failed to save due to collision",
           variant: "error",
         });
       }
     },
-    [manager, offlineTasks, onlineTasks]
+    [manager, offlineTasks, onlineTasks, setNotification]
   );
 
   const deleteItem = useCallback(async () => {
@@ -169,14 +162,20 @@ export default function TasksList() {
         await manager.offlineTasks.update(newTasks);
       }
     } catch {
-      snackbar({
+      setNotification?.({
         text: "Removal failed to save due to collision",
         variant: "error",
       });
     } finally {
       setLoadingState((prev) => ({ ...prev, delete: false }));
     }
-  }, [manager, modelTasks.deleteTask, offlineTasks, onlineTasks]);
+  }, [
+    manager,
+    modelTasks.deleteTask,
+    offlineTasks,
+    onlineTasks,
+    setNotification,
+  ]);
 
   const dragEndHandler = useCallback(
     async (event: DragEndEvent) => {

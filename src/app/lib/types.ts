@@ -147,7 +147,7 @@ export interface ModalState {
 export interface SnackbarData {
   text: string;
   variant?: ComponentProps<typeof Notification>["variant"];
-  id: string;
+  timestamp: number;
 }
 
 export type BChannelEvent =

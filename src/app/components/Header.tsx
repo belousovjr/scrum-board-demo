@@ -14,8 +14,7 @@ import { Button, Modal } from "@belousovjr/uikit";
 import { useShortenLink } from "../lib/helpers/useShortenLink";
 import { QRCodeSVG } from "qrcode.react";
 import DebouncedLoader from "./DebouncedLoader";
-import useBoardManager from "../lib/helpers/useBoardManager ";
-import { snackbar } from "../lib/utils";
+import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
 
 export default function Header({
@@ -25,7 +24,7 @@ export default function Header({
 }) {
   const manager = useBoardManager();
 
-  const { isOffline } = useServiceContext();
+  const { isOffline, setNotification } = useServiceContext();
   const defIsOffline = useDeferredValue(isOffline);
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -155,7 +154,7 @@ export default function Header({
           variant="secondary"
           onClick={() => {
             navigator.clipboard.writeText(link!).then(() => {
-              snackbar({ text: "Link copied", variant: "success" });
+              setNotification?.({ text: "Link copied", variant: "success" });
             });
           }}
           autoFocus
