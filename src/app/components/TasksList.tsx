@@ -289,7 +289,7 @@ export default function TasksList() {
       <Modal
         isOpen={!!modelTasks.showTask}
         onClose={() => setModalState((prev) => ({ ...prev, showTask: null }))}
-        className="w-[600px] grid gap-5"
+        className="w-[600px] min-h-[220px] grid content-start gap-5"
       >
         <p className="text-xl font-bold break-all">
           {modelTasks.showTask?.title}

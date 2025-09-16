@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "@belousovjr/uikit";
 import { ReactNode, useMemo, ComponentProps, useEffect } from "react";
-import { EditIcon, GripHorizontalIcon, XIcon } from "lucide-react";
+import { EditIcon, GripHorizontalIcon } from "lucide-react";
 import { TutorialStatusOption } from "../lib/types";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { tutorialStatuses } from "../lib/constants";
