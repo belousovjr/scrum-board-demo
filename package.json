@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@belousovjr/uikit": "^0.1.8",
+    "@belousovjr/uikit": "^0.2.0",
     "@dnd-kit/core": "^6.3.1",
     "@reduxjs/toolkit": "^2.9.0",
     "@serwist/next": "^9.1.1",

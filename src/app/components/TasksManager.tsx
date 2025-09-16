@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import useBoardManager from "../lib/helpers/useBoardManager ";
+import useBoardManager from "../lib/helpers/useBoardManager";
 import { BoardData } from "../lib/types";
 import { Button, Modal } from "@belousovjr/uikit";
 import dynamic from "next/dynamic";

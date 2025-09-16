@@ -8,7 +8,7 @@ import {
   useCallback,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { BChannelEvent } from "../lib/types";
+import { BChannelEvent, SnackbarData } from "../lib/types";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setOffline } from "../store/slices/appSlice";
 import {
@@ -24,11 +24,14 @@ export const ServiceContext = createContext<{
   isDesktop: boolean;
   isTimeValid: boolean;
   isVisible: boolean;
+  notification: SnackbarData | null;
+  setNotification?: (value: Omit<SnackbarData, "timestamp"> | null) => void;
   setIsOffline?: (value: boolean) => void;
 }>({
   isPrimaryPage: true,
   isTimeValid: true,
   isVisible: true,
+  notification: null,
   isOffline: checkIsNativeOffline(),
   isNativeOffline: checkIsNativeOffline(),
   isDesktop: checkIsDesktop(),
@@ -53,6 +56,8 @@ export default function ServiceContextProvider({
   const [timeOffset, setTimeOffset] = useState<number | null>(null);
   const lastTimestamp = useRef<number | null>(null);
 
+  const [snackbarData, setSnackbarData] = useState<SnackbarData | null>(null);
+
   const appDispatch = useAppDispatch();
 
   const setIsOffline = useCallback(
@@ -73,6 +78,13 @@ export default function ServiceContextProvider({
     }
     lastTimestamp.current = now;
   }, []);
+
+  const setNotification = useCallback(
+    (data: Omit<SnackbarData, "timestamp"> | null) => {
+      setSnackbarData(data && { ...data, timestamp: Date.now() });
+    },
+    []
+  );
 
   useEffect(() => {
     const bc = new BroadcastChannel("board-channel");
@@ -149,6 +161,8 @@ export default function ServiceContextProvider({
         isTimeValid: !timeOffset,
         isVisible,
         setIsOffline,
+        notification: snackbarData,
+        setNotification: setNotification,
       }}
     >
       {children}

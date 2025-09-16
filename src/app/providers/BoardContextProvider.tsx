@@ -13,7 +13,7 @@ import { useDB } from "../lib/helpers/useDB";
 import { usePathname, useRouter } from "next/navigation";
 import { initialTasksSnapshot } from "../lib/constants";
 import usePeerProvider from "../lib/helpers/usePeerProvider";
-import { compareIds, genId, snackbar } from "../lib/utils";
+import { compareIds, genId } from "../lib/utils";
 import useServiceContext from "../lib/helpers/useServiceContext";
 
 export const BoardContext = createContext<BoardManager | null>(null);
@@ -26,7 +26,7 @@ export default function BoardContextProvider({
   const boardData = useDB("boardData");
   const offlineTasks = useDB("offlineTasks");
   const onlineTasksSnapshot = useDB("onlineTasksSnapshot");
-  const { isOffline } = useServiceContext();
+  const { isOffline, setNotification } = useServiceContext();
   const router = useRouter();
   const pathname = usePathname();
   const [refId, setRefId] = useState<string | undefined>();
@@ -53,7 +53,10 @@ export default function BoardContextProvider({
     boardData: boardData.data,
     tasksSnapshot: prepTasksSnapshot,
     onFailedConnection: () => {
-      snackbar({ text: "Failed to connect via invite", variant: "error" });
+      setNotification?.({
+        text: "Failed to connect via invite",
+        variant: "error",
+      });
       removeBoardData();
     },
   });
@@ -135,12 +138,12 @@ export default function BoardContextProvider({
         await onlineTasksSnapshot.update(providerData!.tasksSnapshot);
       }
       await offlineTasks.update([]);
-      snackbar({
+      setNotification?.({
         text: `${offlineTasksCount} Offline Tasks Synced`,
         variant: "success",
       });
     } catch (e) {
-      snackbar({ text: String(e), variant: "error" });
+      setNotification?.({ text: String(e), variant: "error" });
     }
   }, [
     isOffline,
@@ -148,6 +151,7 @@ export default function BoardContextProvider({
     onlineTasksSnapshot,
     providerData,
     requestUpdate,
+    setNotification,
   ]);
 
   useEffect(() => {

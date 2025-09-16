@@ -269,7 +269,7 @@ export default function CreateBoardForm({
         required
         minLength={4}
         placeholder="Board Name"
-        autoFocus={true}
+        autoFocus
         rightIcon={<KanbanIcon />}
       />
       <Textfield
