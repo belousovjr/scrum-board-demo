@@ -16,10 +16,11 @@ import { QRCodeSVG } from "qrcode.react";
 import DebouncedLoader from "./DebouncedLoader";
 import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
-import TutorialTip from "./TutorialTip";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { markStatus } from "../store/slices/tutorialSlice";
 import { tutorialStatuses } from "../lib/constants";
+import dynamic from "next/dynamic";
+const TutorialTip = dynamic(() => import("./TutorialTip"));
 
 export default function Header({
   onCloseBoard,

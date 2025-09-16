@@ -6,7 +6,8 @@ import { Button } from "@belousovjr/uikit";
 import { PlusIcon } from "lucide-react";
 import { statusesTitles } from "../lib/constants";
 import useServiceContext from "../lib/helpers/useServiceContext";
-import TutorialTip from "./TutorialTip";
+import dynamic from "next/dynamic";
+const TutorialTip = dynamic(() => import("./TutorialTip"));
 
 export default function TasksListSection({
   tasks,
