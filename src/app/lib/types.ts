@@ -4,6 +4,7 @@ import { DBSchema } from "idb";
 import usePeerProvider from "./helpers/usePeerProvider";
 import { ComponentProps } from "react";
 import { Notification } from "@belousovjr/uikit";
+import { tutorialStatuses } from "./constants";
 
 export type TaskStatus = "TODO" | "PROGRESS" | "DONE";
 
@@ -158,3 +159,7 @@ export type BChannelEvent =
   | {
       type: "exists";
     };
+
+export type TutorialStatusOption = (typeof tutorialStatuses)[number];
+
+export type TutorialStatusState = Record<TutorialStatusOption, boolean>;

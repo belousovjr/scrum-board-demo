@@ -2,9 +2,11 @@ import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import storage from "redux-persist/lib/storage";
 import { persistReducer, persistStore, WebStorage } from "redux-persist";
 import appReducer from "./slices/appSlice";
+import tutorialReducer from "./slices/tutorialSlice";
 
 const reducers = {
   app: appReducer,
+  tutorial: tutorialReducer,
 } as const;
 
 const rootReducer = combineReducers(reducers);
@@ -16,7 +18,7 @@ const persistConfig: {
 } = {
   key: "root",
   storage,
-  whitelist: ["app"],
+  whitelist: ["app", "tutorial"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

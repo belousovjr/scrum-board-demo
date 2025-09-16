@@ -10,15 +10,19 @@ import TaskItem from "./TaskItem";
 import { DndContext, DragEndEvent, DragOverlay } from "@dnd-kit/core";
 import { Button, Modal } from "@belousovjr/uikit";
 import TaskEditForm from "./TaskEditForm";
-import TasksListByType from "./TasksListSection";
+import TasksListSection from "./TasksListSection";
 import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
+import { useAppDispatch } from "../store/hooks";
+import { markStatus } from "../store/slices/tutorialSlice";
 
 export default function TasksList() {
   const manager = useBoardManager();
 
   const { isDesktop, isOffline, setNotification } = useServiceContext();
   const defIsDesktop = useDeferredValue(isDesktop);
+
+  const appDispatch = useAppDispatch();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [updatedTask, setUpdatedTask] = useState<WithId<TaskData> | null>(null);
@@ -132,8 +136,14 @@ export default function TasksList() {
       try {
         if (!task.isOffline) {
           await manager.requestUpdate?.(newTasks, [task.id]);
+          if (oldIndex !== -1) {
+            appDispatch(markStatus("TURN_ON_OFFLINE_MODE"));
+          }
         } else {
           await manager.offlineTasks.update(newTasks);
+          if (oldIndex === -1) {
+            appDispatch(markStatus("TURN_OFF_OFFLINE_MODE"));
+          }
         }
       } catch {
         setNotification?.({
@@ -142,7 +152,7 @@ export default function TasksList() {
         });
       }
     },
-    [manager, offlineTasks, onlineTasks, setNotification]
+    [appDispatch, manager, offlineTasks, onlineTasks, setNotification]
   );
 
   const deleteItem = useCallback(async () => {
@@ -202,10 +212,10 @@ export default function TasksList() {
       onDragStart={(event) => setActiveId(event.active.id as string)}
       onDragEnd={dragEndHandler}
     >
-      <div className="grid lg:grid-cols-3 gap-8 min-h-[calc(100dvh-theme(spacing.24))]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-[calc(100dvh-theme(spacing.24))]">
         {tasksList.map(({ type, tasks }) => {
           return (
-            <TasksListByType
+            <TasksListSection
               key={type}
               tasks={tasks}
               type={type}

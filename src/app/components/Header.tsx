@@ -16,6 +16,10 @@ import { QRCodeSVG } from "qrcode.react";
 import DebouncedLoader from "./DebouncedLoader";
 import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
+import TutorialTip from "./TutorialTip";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { markStatus } from "../store/slices/tutorialSlice";
+import { tutorialStatuses } from "../lib/constants";
 
 export default function Header({
   onCloseBoard,
@@ -26,6 +30,11 @@ export default function Header({
 
   const { isOffline, setNotification } = useServiceContext();
   const defIsOffline = useDeferredValue(isOffline);
+
+  const currentStatus = useAppSelector((state) =>
+    tutorialStatuses.findLast((status) => state.tutorial.statuses[status])
+  );
+  const appDispatch = useAppDispatch();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -61,6 +70,22 @@ export default function Header({
       document.removeEventListener("scroll", scrollHandler);
     };
   });
+
+  useEffect(() => {
+    if (!defIsOffline && manager.providerData && namedMembers.length) {
+      appDispatch(markStatus("FINAL"));
+      setNotification?.({
+        text: "The tutorial is complete. Enjoy!",
+        variant: "success",
+      });
+    }
+  }, [
+    appDispatch,
+    defIsOffline,
+    manager.providerData,
+    namedMembers.length,
+    setNotification,
+  ]);
 
   return (
     <div className="fixed w-full z-10 bg-white">
@@ -106,26 +131,34 @@ export default function Header({
                 </button>
               )}
               {!!offlineTasksCount && (
-                <button
-                  onClick={manager.syncOfflineTasks}
-                  title={`Synchronize ${offlineTasksCount} Offline Tasks`}
-                  className={`relative cursor-pointer text-primary-100`}
-                >
-                  <RefreshCcwIcon />
-                  <span className="absolute right-0 -top-0.5 bg-primary-100 rounded-full font-mono text-white font-medium text-[0.5rem]/[0.75rem] h-3 min-w-3 px-0.5">
-                    {offlineTasksCount}
-                  </span>
-                </button>
+                <TutorialTip status="SYNC" active>
+                  <button
+                    onClick={() => {
+                      manager.syncOfflineTasks().then(() => {
+                        appDispatch(markStatus("ADD_MEMBER"));
+                      });
+                    }}
+                    title={`Synchronize ${offlineTasksCount} Offline Tasks`}
+                    className={`relative cursor-pointer text-primary-100`}
+                  >
+                    <RefreshCcwIcon />
+                    <span className="absolute right-0 -top-0.5 bg-primary-100 rounded-full font-mono text-white font-medium text-[0.5rem]/[0.75rem] h-3 min-w-3 px-0.5">
+                      {offlineTasksCount}
+                    </span>
+                  </button>
+                </TutorialTip>
               )}
-              <button
-                onClick={() => {
-                  setIsShareOpen(true);
-                }}
-                title="Invite Members"
-                className="cursor-pointer text-primary-100"
-              >
-                <UserRoundPlusIcon />
-              </button>
+              <TutorialTip status="ADD_MEMBER">
+                <button
+                  onClick={() => {
+                    setIsShareOpen(true);
+                  }}
+                  title="Invite Members"
+                  className="cursor-pointer text-primary-100"
+                >
+                  <UserRoundPlusIcon />
+                </button>
+              </TutorialTip>
             </>
           )}
           {manager.boardData.data && (
@@ -137,7 +170,18 @@ export default function Header({
               <CircleXIcon />
             </button>
           )}
-          <OfflineToggle />
+          <TutorialTip
+            status={
+              currentStatus === "TURN_ON_OFFLINE_MODE" ||
+              currentStatus === "ADD_OFFLINE_TASK"
+                ? "TURN_ON_OFFLINE_MODE"
+                : "TURN_OFF_OFFLINE_MODE"
+            }
+            disabled={isOffline && !offlineTasksCount}
+            hidden={!manager.boardData.data}
+          >
+            <OfflineToggle />
+          </TutorialTip>
         </div>
       </div>
       <Modal
