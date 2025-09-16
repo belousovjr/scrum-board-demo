@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "@belousovjr/uikit";
 import { ReactNode, useMemo, ComponentProps, useEffect } from "react";
-import { EditIcon, GripHorizontalIcon } from "lucide-react";
+import { EditIcon, GripHorizontalIcon, XIcon } from "lucide-react";
 import { TutorialStatusOption } from "../lib/types";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { tutorialStatuses } from "../lib/constants";
@@ -115,9 +115,14 @@ export default function TutorialTip({
       content={
         <div className="grid gap-6">
           {content}
-
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="secondary">
+            <Button
+              onClick={() => {
+                appDispatch(markStatus("FINAL"));
+              }}
+              size="sm"
+              variant="secondary"
+            >
               Finish Tutorial
             </Button>
           </div>
