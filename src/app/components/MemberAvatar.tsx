@@ -1,23 +1,34 @@
-import { generateFromString } from "generate-avatar";
-import Image from "next/image";
+import { update } from "jdenticon";
+import { useEffect, useRef } from "react";
 
 export function MemberAvatar({
-  id,
+  value,
   className,
   title,
 }: {
-  id: string;
+  value: string;
   className?: string;
   title?: string;
 }) {
+  const iconRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (iconRef.current) {
+      update(iconRef.current, value);
+    }
+  }, [value]);
+
   return (
-    <Image
-      src={`data:image/svg+xml;utf8,${generateFromString(id)}`}
-      width={20}
-      height={20}
-      alt="Avatar"
-      className={`rounded-full shrink-0 w-5 ${className ?? ""}`}
-      title={title}
-    />
+    <span title={title}>
+      <svg
+        data-jdenticon-value={value}
+        height={20}
+        ref={iconRef}
+        width={20}
+        className={`rounded-full shrink-0 w-6 h-6 border-1 border-general-50 ${
+          className ?? ""
+        }`}
+      />
+    </span>
   );
 }

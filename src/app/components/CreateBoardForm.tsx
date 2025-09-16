@@ -279,9 +279,7 @@ export default function CreateBoardForm({
         minLength={4}
         placeholder="Peer Name"
         value={peerName}
-        rightIcon={
-          peerName ? <MemberAvatar id={peerName} className="w-6" /> : undefined
-        }
+        rightIcon={peerName ? <MemberAvatar value={peerName} /> : undefined}
         onChange={(e) => setPeerName(e.target.value)}
       />
       <Button className="mx-auto" icon={<PlusIcon />}>
