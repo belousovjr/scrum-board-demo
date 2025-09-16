@@ -115,7 +115,7 @@ export default function Header({
                   {namedMembers
                     .slice(0, namedMembers.length > 2 ? 1 : 2)
                     .map(([id, name]) => (
-                      <MemberAvatar key={id} id={name} title={name} />
+                      <MemberAvatar key={id} value={name} title={name} />
                     ))}
                   {namedMembers.length > 2 && (
                     <div
@@ -238,7 +238,7 @@ export default function Header({
         <div className="grid gap-4 content-start min-w-[400px] min-h-[200px]">
           {namedMembers.map(([id, name]) => (
             <div key={id} className="flex items-center gap-4 font-medium">
-              <MemberAvatar className="w-6" key={id} id={name} />
+              <MemberAvatar key={id} value={name} />
               <span>{name}</span>
             </div>
           ))}

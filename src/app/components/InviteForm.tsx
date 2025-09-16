@@ -36,9 +36,7 @@ export default function InviteForm({
         label={<span className="text-white">Peer Name</span>}
         defaultValue={defaultName}
         autoFocus={!defaultName}
-        rightIcon={
-          peerName ? <MemberAvatar id={peerName} className="w-6" /> : undefined
-        }
+        rightIcon={peerName ? <MemberAvatar value={peerName} /> : undefined}
         onChange={(e) => setPeerName(e.target.value)}
       />
       <div className="flex justify-end gap-2">
