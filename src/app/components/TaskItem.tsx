@@ -60,7 +60,7 @@ export default function TaskItem({
   return (
     <div
       ref={setNodeRef}
-      className={`relative rounded-lg bg-white border-1 border-general-50 overflow-hidden ${
+      className={`relative rounded-lg bg-white border-1 border-general-50 overflow-hidden w-full ${
         isDragging ? "invisible" : ""
       } ${isDraggable ? "shadow-lg" : ""}`}
       key={task.id}

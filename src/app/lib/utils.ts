@@ -1,13 +1,6 @@
-import { setNotification } from "../store/slices/notificationsSlice";
-import { store } from "../store/store";
 import { getCurrentTime } from "./actions";
 import { messageTypes } from "./constants";
-import {
-  DataMessage,
-  SnackbarData,
-  TasksSnapshot,
-  TasksSnapshotData,
-} from "./types";
+import { DataMessage, TasksSnapshot, TasksSnapshotData } from "./types";
 import Peer, { DataConnection } from "peerjs";
 import { v4 as uuidv4 } from "uuid";
 
@@ -61,10 +54,6 @@ export function checkIsDesktop() {
 
 export function checkIsNativeOffline() {
   return typeof window !== "undefined" ? !window.navigator.onLine : false;
-}
-
-export function snackbar(data: Omit<SnackbarData, "id">) {
-  store.dispatch(setNotification({ ...data, id: uuidv4() }));
 }
 
 export async function getCurrentTimeOffset() {

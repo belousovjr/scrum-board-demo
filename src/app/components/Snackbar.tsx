@@ -1,16 +1,12 @@
 import { Notification } from "@belousovjr/uikit";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { setNotification } from "../store/slices/notificationsSlice";
+import useServiceContext from "../lib/helpers/useServiceContext";
 
 export default function Snackbar() {
   const [isMounted, setIsMounted] = useState(false);
   const [lastInteractive, setLastInteractive] = useState<number | null>(null);
-  const notification = useAppSelector(
-    (store) => store.notifications.notification
-  );
-  const appDispatch = useAppDispatch();
+  const { notification, setNotification } = useServiceContext();
 
   useEffect(() => {
     setIsMounted(true);
@@ -24,7 +20,7 @@ export default function Snackbar() {
       const duration = interactive - now + 4000;
 
       const timeout = setTimeout(() => {
-        appDispatch(setNotification(null));
+        setNotification?.(null);
         setLastInteractive(null);
       }, duration);
 
@@ -34,14 +30,14 @@ export default function Snackbar() {
         setLastInteractive(null);
       };
     }
-  }, [appDispatch, notification, lastInteractive]);
+  }, [notification, lastInteractive, setNotification]);
 
   return (
     isMounted &&
     notification &&
     createPortal(
       <div
-        key={notification.id}
+        key={notification.timestamp}
         onMouseMove={() => {
           setLastInteractive(Date.now());
         }}
@@ -52,7 +48,7 @@ export default function Snackbar() {
           variant={notification.variant}
           className="pointer-events-auto animate-fade-up"
           onClose={() => {
-            appDispatch(setNotification(null));
+            setNotification?.(null);
           }}
         >
           {notification.text}

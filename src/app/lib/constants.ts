@@ -35,3 +35,14 @@ export const statusesTitles: Record<TaskStatus, string> = {
   PROGRESS: "In Progress",
   DONE: "Done",
 };
+
+export const tutorialStatuses = [
+  "ADD_TASK",
+  "CHANGE_TASK_STATUS",
+  "TURN_ON_OFFLINE_MODE",
+  "ADD_OFFLINE_TASK",
+  "TURN_OFF_OFFLINE_MODE",
+  "SYNC",
+  "ADD_MEMBER",
+  "FINAL",
+] as const;

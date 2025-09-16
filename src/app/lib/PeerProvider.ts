@@ -18,7 +18,6 @@ import {
   genId,
   getSnapshotData,
   isDataMessage,
-  snackbar,
 } from "./utils";
 import { checkHeartbeatMs, lifeTimeMs, reInitHeartbeatMs } from "./constants";
 
