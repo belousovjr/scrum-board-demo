@@ -1,13 +1,6 @@
-import { setNotification } from "../store/slices/notificationsSlice";
-import { store } from "../store/store";
 import { getCurrentTime } from "./actions";
 import { messageTypes } from "./constants";
-import {
-  DataMessage,
-  SnackbarData,
-  TasksSnapshot,
-  TasksSnapshotData,
-} from "./types";
+import { DataMessage, TasksSnapshot, TasksSnapshotData } from "./types";
 import Peer, { DataConnection } from "peerjs";
 import { v4 as uuidv4 } from "uuid";
 
