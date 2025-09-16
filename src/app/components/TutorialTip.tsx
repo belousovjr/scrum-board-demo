@@ -1,6 +1,6 @@
 import { Button, Tooltip } from "@belousovjr/uikit";
 import { ReactNode, useMemo, ComponentProps, useEffect } from "react";
-import { EditIcon, GripHorizontalIcon, XIcon } from "lucide-react";
+import { EditIcon, GripHorizontalIcon } from "lucide-react";
 import { TutorialStatusOption } from "../lib/types";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { tutorialStatuses } from "../lib/constants";
@@ -35,12 +35,12 @@ export default function TutorialTip({
         return (
           <div className="grid gap-2">
             <span>
-              Edit your Task by clicking{" "}
+              <span className="font-bold">Edit your Task</span> by clicking:{" "}
               <EditIcon className="inline ml-3 bg-primary-70 outline-2 outline-primary-70 rounded-sm" />
             </span>
             <span className="hidden lg:inline">
               Or <span className="font-bold">Change Status</span> by holding
-              down{" "}
+              down:{" "}
               <GripHorizontalIcon className="inline ml-3 bg-primary-70 outline-2 outline-primary-70 rounded-sm" />
             </span>
           </div>
@@ -51,7 +51,7 @@ export default function TutorialTip({
             Turn on <span className="font-bold">Offline Mode</span> using the
             switch,
             <br />
-            or <span className="font-bold">disable internet</span> on your
+            or <span className="font-bold">Disable Internet</span> on your
             device.
           </span>
         );
@@ -71,8 +71,9 @@ export default function TutorialTip({
       case "SYNC":
         return (
           <span>
-            <span className="font-bold">Sync</span> your Offline Tasks with the
-            online list.
+            <span className="font-bold">Sync</span> your{" "}
+            <span className="font-bold">Offline Tasks</span> with the online
+            list.
           </span>
         );
       case "ADD_MEMBER":
