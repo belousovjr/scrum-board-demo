@@ -1,21 +1,17 @@
 import { Button, Tooltip } from "@belousovjr/uikit";
-import { ReactNode, useMemo, ComponentProps, useEffect } from "react";
+import { ReactNode, useMemo, ComponentProps } from "react";
 import { EditIcon, GripHorizontalIcon } from "lucide-react";
 import { TutorialStatusOption } from "../lib/types";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { tutorialStatuses } from "../lib/constants";
-import { markStatus } from "../store/slices/tutorialSlice";
+import useTutorial from "../lib/helpers/useTutorial";
 
 export default function TutorialTip({
   hidden,
-  active,
   disabled,
   status,
   defaultPosition = "bottom",
   children,
 }: {
   hidden?: boolean;
-  active?: boolean;
   disabled?: boolean;
   status: TutorialStatusOption;
   defaultPosition?: ComponentProps<typeof Tooltip>["defaultPosition"];
@@ -92,24 +88,11 @@ export default function TutorialTip({
     }
   }, [status]);
 
-  const isStatusActive = useAppSelector((state) => {
-    const lastActive = tutorialStatuses.findLast(
-      (item) => state.tutorial.statuses[item]
-    );
-    return lastActive === status;
-  });
-
-  const appDispatch = useAppDispatch();
-
-  useEffect(() => {
-    if (active && !hidden && !disabled) {
-      appDispatch(markStatus(status));
-    }
-  }, [active, appDispatch, status, hidden, disabled]);
+  const { lastActiveStatus, checkStatus } = useTutorial();
 
   return !hidden ? (
     <Tooltip
-      isOpen={isStatusActive && !disabled}
+      isOpen={lastActiveStatus === status && !disabled}
       defaultPosition={defaultPosition}
       className="p-7 z-30"
       arrowDistance={13}
@@ -119,7 +102,7 @@ export default function TutorialTip({
           <div className="flex justify-end gap-2">
             <Button
               onClick={() => {
-                appDispatch(markStatus("FINAL"));
+                checkStatus("FINAL");
               }}
               size="sm"
               variant="secondary"

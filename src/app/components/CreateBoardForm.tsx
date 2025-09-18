@@ -13,7 +13,7 @@ export default function CreateBoardForm({
   const [peerName, setPeerName] = useState("");
   return (
     <form
-      className="grid gap-6 p-7 2xl:px-12 shadow-lg rounded-md"
+      className="grid gap-6 p-7 2xl:px-12 shadow-lg rounded-md bg-white"
       action={(data) => {
         const newBoardData = {
           ...Object.fromEntries(data),

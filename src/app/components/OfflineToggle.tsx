@@ -1,10 +1,10 @@
 "use client";
 import { WifiIcon, WifiOffIcon } from "lucide-react";
 import { Toggle } from "@belousovjr/uikit";
-import useServiceContext from "../lib/helpers/useServiceContext";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
 
 export default function OfflineToggle() {
-  const { isOffline, isNativeOffline, setIsOffline } = useServiceContext();
+  const { isOffline, isNativeOffline, setIsOffline } = useOfflineMode();
   return (
     <Toggle
       active={isOffline}

@@ -65,18 +65,20 @@ export default function TasksManager() {
           setModalState((prev) => ({ ...prev, showClose: true }))
         }
       />
-      <div className="grid grid-cols-4 lg:grid-cols-12 gap-8 items-center px-2 pt-16 pb-8 md:px-8 mx-auto w-full min-h-dvh max-w-[1920px]">
-        {manager && !manager.boardData.data ? (
-          !manager.isLoading && (
-            <div className="col-span-4 lg:col-start-5">
-              <CreateBoardForm create={createBoard} />
+      <div className="bg-gradient-to-b from-[64px] from-general-30/50 to-general-30">
+        <div className="grid grid-cols-4 lg:grid-cols-12 gap-8 items-center px-2 pt-16 pb-8 md:px-8 mx-auto w-full min-h-dvh max-w-[1920px]">
+          {manager && !manager.boardData.data ? (
+            !manager.isLoading && (
+              <div className="col-span-4 lg:col-start-5">
+                <CreateBoardForm create={createBoard} />
+              </div>
+            )
+          ) : (
+            <div className="col-span-4 lg:col-span-12 min-h-full">
+              <TasksList />
             </div>
-          )
-        ) : (
-          <div className="col-span-4 lg:col-span-12 min-h-full">
-            <TasksList />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {!!manager && (

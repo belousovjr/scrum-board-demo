@@ -15,6 +15,7 @@ import { initialTasksSnapshot } from "../lib/constants";
 import usePeerProvider from "../lib/helpers/usePeerProvider";
 import { compareIds, genId } from "../lib/utils";
 import useServiceContext from "../lib/helpers/useServiceContext";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
 
 export const BoardContext = createContext<BoardManager | null>(null);
 
@@ -26,7 +27,8 @@ export default function BoardContextProvider({
   const boardData = useDB("boardData");
   const offlineTasks = useDB("offlineTasks");
   const onlineTasksSnapshot = useDB("onlineTasksSnapshot");
-  const { isOffline, setNotification } = useServiceContext();
+  const { setNotification } = useServiceContext();
+  const { isOffline } = useOfflineMode();
   const router = useRouter();
   const pathname = usePathname();
   const [refId, setRefId] = useState<string | undefined>();

@@ -16,10 +16,9 @@ import { QRCodeSVG } from "qrcode.react";
 import DebouncedLoader from "./DebouncedLoader";
 import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { markStatus } from "../store/slices/tutorialSlice";
-import { tutorialStatuses } from "../lib/constants";
 import dynamic from "next/dynamic";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
+import useTutorial from "../lib/helpers/useTutorial";
 const TutorialTip = dynamic(() => import("./TutorialTip"));
 
 export default function Header({
@@ -28,14 +27,11 @@ export default function Header({
   onCloseBoard?: () => unknown;
 }) {
   const manager = useBoardManager();
+  const { checkStatus, lastActiveStatus } = useTutorial();
 
-  const { isOffline, setNotification } = useServiceContext();
+  const { setNotification } = useServiceContext();
+  const { isOffline } = useOfflineMode();
   const defIsOffline = useDeferredValue(isOffline);
-
-  const currentStatus = useAppSelector((state) =>
-    tutorialStatuses.findLast((status) => state.tutorial.statuses[status])
-  );
-  const appDispatch = useAppDispatch();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -74,19 +70,23 @@ export default function Header({
 
   useEffect(() => {
     if (!defIsOffline && manager.providerData && namedMembers.length) {
-      appDispatch(markStatus("FINAL"));
+      checkStatus("FINAL");
       setNotification?.({
         text: "The tutorial is complete. Enjoy!",
         variant: "success",
       });
     }
   }, [
-    appDispatch,
+    checkStatus,
     defIsOffline,
     manager.providerData,
     namedMembers.length,
     setNotification,
   ]);
+
+  useEffect(() => {
+    checkStatus("SYNC", () => !defIsOffline && !!offlineTasksCount);
+  }, [checkStatus, defIsOffline, offlineTasksCount]);
 
   return (
     <div className="fixed w-full z-10 bg-white">
@@ -94,10 +94,13 @@ export default function Header({
         data-scrolled={isScrolled}
         className="flex gap-5 items-center md:px-8 h-16 mx-auto px-2 w-full max-w-[1920px] transition-[box-shadow] data-[scrolled=true]:shadow-xs"
       >
-        <div className="flex gap-2 items-center overflow-hidden">
-          <KanbanIcon className="hidden lg:flex flex-1 min-w-6 mr-5" />
+        <div className="flex gap-4 items-center overflow-hidden">
+          <KanbanIcon
+            strokeWidth={2.5}
+            className="hidden lg:flex flex-1 min-w-6"
+          />
           {manager.boardData.data?.name && (
-            <div className="text-2xl font-bold capitalize text-nowrap overflow-hidden overflow-ellipsis">
+            <div className="text-2xl font-medium text-nowrap overflow-hidden overflow-ellipsis">
               {manager.boardData.data.name}
             </div>
           )}
@@ -132,11 +135,11 @@ export default function Header({
                 </button>
               )}
               {!!offlineTasksCount && (
-                <TutorialTip status="SYNC" active>
+                <TutorialTip status="SYNC">
                   <button
                     onClick={() => {
                       manager.syncOfflineTasks().then(() => {
-                        appDispatch(markStatus("ADD_MEMBER"));
+                        checkStatus("ADD_MEMBER");
                       });
                     }}
                     title={`Synchronize ${offlineTasksCount} Offline Tasks`}
@@ -173,8 +176,8 @@ export default function Header({
           )}
           <TutorialTip
             status={
-              currentStatus === "TURN_ON_OFFLINE_MODE" ||
-              currentStatus === "ADD_OFFLINE_TASK"
+              lastActiveStatus === "TURN_ON_OFFLINE_MODE" ||
+              lastActiveStatus === "ADD_OFFLINE_TASK"
                 ? "TURN_ON_OFFLINE_MODE"
                 : "TURN_OFF_OFFLINE_MODE"
             }

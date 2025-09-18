@@ -8,13 +8,15 @@ import {
 } from "../types";
 import { compareIds } from "../utils";
 import useServiceContext from "./useServiceContext";
+import useOfflineMode from "./useOfflineMode";
 
 export default function usePeerProvider({
   boardData,
   tasksSnapshot,
   onFailedConnection,
 }: UsePeerProviderOptions) {
-  const { isOffline, isPrimaryPage, isVisible } = useServiceContext();
+  const { isPrimaryPage, isVisible } = useServiceContext();
+  const { isOffline } = useOfflineMode();
   const [isConsensus, setIsConsensus] = useState(false);
 
   const providerRef = useRef<PeerProvider | null>(null);
