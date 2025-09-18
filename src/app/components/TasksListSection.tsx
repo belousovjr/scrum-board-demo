@@ -1,12 +1,13 @@
 import { useDroppable } from "@dnd-kit/core";
 import { TaskData, TaskStatus, TaskType, WithId } from "../lib/types";
 import TaskItem from "./TaskItem";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Button } from "@belousovjr/uikit";
 import { PlusIcon } from "lucide-react";
 import { statusesTitles } from "../lib/constants";
 import dynamic from "next/dynamic";
 import useOfflineMode from "../lib/helpers/useOfflineMode";
+import useTutorial from "../lib/helpers/useTutorial";
 const TutorialTip = dynamic(() => import("./TutorialTip"));
 
 export default function TasksListSection({
@@ -27,15 +28,23 @@ export default function TasksListSection({
   setEditTask: (taskId: string) => unknown;
 }) {
   const { isOffline } = useOfflineMode();
+  const { checkStatus } = useTutorial();
   const { isOver, setNodeRef, active } = useDroppable({
     id: type,
   });
+
   const isMobile = type === "MOBILE";
 
   const disabled = useMemo(
     () => !isOffline && !providerIsReady,
     [isOffline, providerIsReady]
   );
+
+  useEffect(() => {
+    checkStatus("ADD_TASK", () => !isOffline);
+    checkStatus("ADD_OFFLINE_TASK", () => isOffline);
+    checkStatus("CHANGE_TASK_STATUS", () => !!tasks.length);
+  }, [checkStatus, isOffline, tasks]);
 
   return (
     <div ref={setNodeRef} className="flex flex-col gap-y-4">
@@ -53,7 +62,6 @@ export default function TasksListSection({
         <TutorialTip
           status={!isOffline ? "ADD_TASK" : "ADD_OFFLINE_TASK"}
           hidden={type !== "TODO" && type != "MOBILE"}
-          active
           disabled={disabled}
         >
           <Button
@@ -74,7 +82,6 @@ export default function TasksListSection({
         {tasks!.map((item, i) => (
           <TutorialTip
             status="CHANGE_TASK_STATUS"
-            active
             disabled={!!active || disabled}
             hidden={(type !== "TODO" && type != "MOBILE") || !!i}
             key={item.id}
