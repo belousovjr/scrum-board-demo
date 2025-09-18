@@ -20,6 +20,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { markStatus } from "../store/slices/tutorialSlice";
 import { tutorialStatuses } from "../lib/constants";
 import dynamic from "next/dynamic";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
 const TutorialTip = dynamic(() => import("./TutorialTip"));
 
 export default function Header({
@@ -29,7 +30,8 @@ export default function Header({
 }) {
   const manager = useBoardManager();
 
-  const { isOffline, setNotification } = useServiceContext();
+  const { setNotification } = useServiceContext();
+  const { isOffline } = useOfflineMode();
   const defIsOffline = useDeferredValue(isOffline);
 
   const currentStatus = useAppSelector((state) =>

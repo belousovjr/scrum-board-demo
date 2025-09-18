@@ -15,11 +15,13 @@ import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
 import { useAppDispatch } from "../store/hooks";
 import { markStatus } from "../store/slices/tutorialSlice";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
 
 export default function TasksList() {
   const manager = useBoardManager();
 
-  const { isDesktop, isOffline, setNotification } = useServiceContext();
+  const { isDesktop, setNotification } = useServiceContext();
+  const { isOffline } = useOfflineMode();
   const defIsDesktop = useDeferredValue(isDesktop);
 
   const appDispatch = useAppDispatch();

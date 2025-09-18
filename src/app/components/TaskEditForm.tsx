@@ -7,6 +7,7 @@ import { Button, ColorPicker, Select, Textfield } from "@belousovjr/uikit";
 import { statuses, statusesTitles } from "../lib/constants";
 import randomColor from "randomcolor";
 import useServiceContext from "../lib/helpers/useServiceContext";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
 
 interface TaskEditFormProps {
   editTask?: WithId<TaskData> | null;
@@ -28,7 +29,8 @@ export default function TaskEditForm({
   const [editLoading, setEditLoading] = useState(false);
   const [color, setColor] = useState<string>();
 
-  const { isOffline, setNotification } = useServiceContext();
+  const { setNotification } = useServiceContext();
+  const { isOffline } = useOfflineMode();
 
   const edit = useCallback(
     async (data: FormData) => {

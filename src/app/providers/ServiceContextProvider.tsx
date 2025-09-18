@@ -9,31 +9,20 @@ import {
 } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { BChannelEvent, SnackbarData } from "../lib/types";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { setOffline } from "../store/slices/appSlice";
-import {
-  checkIsDesktop,
-  checkIsNativeOffline,
-  getCurrentTimeOffset,
-} from "../lib/utils";
+import { checkIsDesktop, getCurrentTimeOffset } from "../lib/utils";
 
 export const ServiceContext = createContext<{
   isPrimaryPage: boolean;
-  isOffline: boolean;
-  isNativeOffline: boolean;
   isDesktop: boolean;
   isTimeValid: boolean;
   isVisible: boolean;
   notification: SnackbarData | null;
   setNotification?: (value: Omit<SnackbarData, "timestamp"> | null) => void;
-  setIsOffline?: (value: boolean) => void;
 }>({
   isPrimaryPage: true,
   isTimeValid: true,
   isVisible: true,
   notification: null,
-  isOffline: checkIsNativeOffline(),
-  isNativeOffline: checkIsNativeOffline(),
   isDesktop: checkIsDesktop(),
 });
 
@@ -45,27 +34,16 @@ export default function ServiceContextProvider({
   const [isPrimary, setIsPrimary] = useState(true);
   const id = useRef(uuidv4());
 
-  const [isNativeOffline, setIsNativeOffline] = useState(checkIsNativeOffline);
   const [isDesktop, setIsDesktop] = useState(checkIsDesktop);
   const [isVisible, setIsVisible] = useState(() =>
     typeof window !== "undefined"
       ? window.document.visibilityState === "visible"
       : false
   );
-  const isOffline = useAppSelector((store) => store.app.offline);
   const [timeOffset, setTimeOffset] = useState<number | null>(null);
   const lastTimestamp = useRef<number | null>(null);
 
   const [snackbarData, setSnackbarData] = useState<SnackbarData | null>(null);
-
-  const appDispatch = useAppDispatch();
-
-  const setIsOffline = useCallback(
-    (value: boolean) => {
-      appDispatch(setOffline(value));
-    },
-    [appDispatch]
-  );
 
   const syncTime = useCallback(() => {
     const expectedTimestamp =
@@ -99,19 +77,6 @@ export default function ServiceContextProvider({
     bc.postMessage({ type: "hello", sender: id.current });
     return () => {
       bc?.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleOnline = () => setIsNativeOffline(false);
-    const handleOffline = () => setIsNativeOffline(true);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -155,12 +120,10 @@ export default function ServiceContextProvider({
     <ServiceContext
       value={{
         isPrimaryPage: isPrimary,
-        isNativeOffline,
-        isOffline: isOffline || isNativeOffline,
+
         isDesktop,
         isTimeValid: !timeOffset,
         isVisible,
-        setIsOffline,
         notification: snackbarData,
         setNotification: setNotification,
       }}

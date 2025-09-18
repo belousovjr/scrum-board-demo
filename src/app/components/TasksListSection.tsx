@@ -5,8 +5,8 @@ import { useMemo } from "react";
 import { Button } from "@belousovjr/uikit";
 import { PlusIcon } from "lucide-react";
 import { statusesTitles } from "../lib/constants";
-import useServiceContext from "../lib/helpers/useServiceContext";
 import dynamic from "next/dynamic";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
 const TutorialTip = dynamic(() => import("./TutorialTip"));
 
 export default function TasksListSection({
@@ -26,7 +26,7 @@ export default function TasksListSection({
   onShow: (taskId: string) => unknown;
   setEditTask: (taskId: string) => unknown;
 }) {
-  const { isOffline } = useServiceContext();
+  const { isOffline } = useOfflineMode();
   const { isOver, setNodeRef, active } = useDroppable({
     id: type,
   });
