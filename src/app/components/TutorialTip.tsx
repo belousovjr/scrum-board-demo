@@ -107,7 +107,7 @@ export default function TutorialTip({
               size="sm"
               variant="secondary"
             >
-              Finish Tutorial
+              Skip Tutorial
             </Button>
           </div>
         </div>
