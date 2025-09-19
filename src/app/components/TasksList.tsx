@@ -13,16 +13,16 @@ import TaskEditForm from "./TaskEditForm";
 import TasksListSection from "./TasksListSection";
 import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
-import { useAppDispatch } from "../store/hooks";
-import { markStatus } from "../store/slices/tutorialSlice";
+import useOfflineMode from "../lib/helpers/useOfflineMode";
+import useTutorial from "../lib/helpers/useTutorial";
 
 export default function TasksList() {
   const manager = useBoardManager();
 
-  const { isDesktop, isOffline, setNotification } = useServiceContext();
+  const { isDesktop, setNotification } = useServiceContext();
+  const { isOffline } = useOfflineMode();
   const defIsDesktop = useDeferredValue(isDesktop);
-
-  const appDispatch = useAppDispatch();
+  const { checkStatus } = useTutorial();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [updatedTask, setUpdatedTask] = useState<WithId<TaskData> | null>(null);
@@ -137,12 +137,12 @@ export default function TasksList() {
         if (!task.isOffline) {
           await manager.requestUpdate?.(newTasks, [task.id]);
           if (oldIndex !== -1) {
-            appDispatch(markStatus("TURN_ON_OFFLINE_MODE"));
+            checkStatus("TURN_ON_OFFLINE_MODE");
           }
         } else {
           await manager.offlineTasks.update(newTasks);
           if (oldIndex === -1) {
-            appDispatch(markStatus("TURN_OFF_OFFLINE_MODE"));
+            checkStatus("TURN_OFF_OFFLINE_MODE");
           }
         }
       } catch {
@@ -152,7 +152,7 @@ export default function TasksList() {
         });
       }
     },
-    [appDispatch, manager, offlineTasks, onlineTasks, setNotification]
+    [checkStatus, manager, offlineTasks, onlineTasks, setNotification]
   );
 
   const deleteItem = useCallback(async () => {
