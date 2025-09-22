@@ -8,7 +8,7 @@ import { statusesTitles } from "../lib/constants";
 import dynamic from "next/dynamic";
 import useOfflineMode from "../lib/helpers/useOfflineMode";
 import useTutorial from "../lib/helpers/useTutorial";
-const TutorialTip = dynamic(() => import("./TutorialTip"));
+import TutorialTip from "./TutorialTip";
 
 export default function TasksListSection({
   tasks,
