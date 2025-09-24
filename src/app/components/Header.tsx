@@ -95,10 +95,7 @@ export default function Header({
         className="flex gap-5 items-center md:px-8 h-16 mx-auto px-2 w-full max-w-[1920px] transition-[box-shadow] data-[scrolled=true]:shadow-xs"
       >
         <div className="flex gap-4 items-center overflow-hidden">
-          <KanbanIcon
-            strokeWidth={2.5}
-            className="hidden lg:flex flex-1 min-w-6"
-          />
+          <KanbanIcon className="hidden lg:flex flex-1 min-w-6" />
           {manager.boardData.data?.name && (
             <div className="text-2xl font-medium text-nowrap overflow-hidden overflow-ellipsis">
               {manager.boardData.data.name}
