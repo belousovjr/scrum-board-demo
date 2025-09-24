@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Scrum Board Demo",
-    short_name: "Scrum Board",
+    short_name: "Scrum Board Demo",
     description: "Scrum Board RTC Manager",
     start_url: "/",
     display: "standalone",
