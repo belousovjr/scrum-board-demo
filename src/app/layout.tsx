@@ -16,7 +16,7 @@ const redhatMono = Red_Hat_Mono({
 });
 const APP_NAME = "Scrum Board Demo";
 const APP_DEFAULT_TITLE = "Scrum Board RTC Manager";
-const APP_TITLE_TEMPLATE = "%s - Scrum Board";
+const APP_TITLE_TEMPLATE = "%s - Scrum Board Demo";
 const APP_DESCRIPTION = "Scrum Board RTC Manager";
 
 export const metadata: Metadata = {
