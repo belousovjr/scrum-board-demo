@@ -133,18 +133,6 @@ export default function TasksManager() {
           The application is open in another tab
         </p>
         <div className="font-sans">Please close the rest of the pages.</div>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              window.location.reload();
-            }}
-            loading={loadingState.close}
-            autoFocus
-          >
-            Reload Page
-          </Button>
-        </div>
       </Modal>
       <Modal
         isOpen={!isTimeValid}
@@ -152,18 +140,6 @@ export default function TasksManager() {
       >
         <p className="text-xl font-bold">Incorrect Local Time</p>
         <p className="text-base">Please update your device clock.</p>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              window.location.reload();
-            }}
-            loading={loadingState.close}
-            autoFocus
-          >
-            Reload Page
-          </Button>
-        </div>
       </Modal>
       <Snackbar />
     </>
