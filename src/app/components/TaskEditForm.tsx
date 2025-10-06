@@ -90,7 +90,7 @@ export default function TaskEditForm({
         name="title"
         required
         readOnly={loading}
-        autoFocus={!editTask}
+        autoFocus
       />
       <Textfield
         label="Content"
