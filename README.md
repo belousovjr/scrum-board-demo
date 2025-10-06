@@ -28,6 +28,5 @@ Supports both **online** and **offline** modes, with synchronization.
 
 ## Links
 
-- [task-mesh-demo.vercel.app](https://task-mesh-demo.vercel.app/)
 - [uikit](https://uikit-peach.vercel.app)
 - [GitHub](https://github.com/belousovjr/scrum-board-demo)
