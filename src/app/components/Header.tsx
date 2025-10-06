@@ -69,20 +69,14 @@ export default function Header({
   });
 
   useEffect(() => {
-    if (!defIsOffline && manager.providerData && namedMembers.length) {
+    if (!defIsOffline && manager.providerData && namedMembers.length && lastActiveStatus !== "FINAL") {
       checkStatus("FINAL");
       setNotification?.({
         text: "The tutorial is complete. Enjoy!",
         variant: "success",
       });
     }
-  }, [
-    checkStatus,
-    defIsOffline,
-    manager.providerData,
-    namedMembers.length,
-    setNotification,
-  ]);
+  }, [checkStatus, defIsOffline, lastActiveStatus, manager.providerData, namedMembers.length, setNotification]);
 
   useEffect(() => {
     checkStatus("SYNC", () => !defIsOffline && !!offlineTasksCount);
