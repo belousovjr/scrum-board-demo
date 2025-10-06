@@ -16,7 +16,6 @@ import { QRCodeSVG } from "qrcode.react";
 import DebouncedLoader from "./DebouncedLoader";
 import useBoardManager from "../lib/helpers/useBoardManager";
 import useServiceContext from "../lib/helpers/useServiceContext";
-import dynamic from "next/dynamic";
 import useOfflineMode from "../lib/helpers/useOfflineMode";
 import useTutorial from "../lib/helpers/useTutorial";
 import TutorialTip from "./TutorialTip";
